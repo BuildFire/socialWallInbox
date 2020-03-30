@@ -1,0 +1,22 @@
+{
+  "author": "BuildFire",
+  "pluginName": "Premium Social Wall Inbox",
+  "pluginDescription": "Inbox for premium social wall one on one threads",
+  "supportEmail": "support@buildfire.com",
+  "control": {
+    "content": {
+      "enabled": false
+    },
+    "design": {
+      "enabled": false
+    },
+    "settings": {
+      "enabled": false
+    },
+    "customTabs": [{ "title": "Tests", "url": "/tests/index.html" }]
+  },
+  "widget": {},
+  "features": [],
+  "webpack": "8080",
+  "languages": ["en"]
+}
