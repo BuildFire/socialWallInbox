@@ -24,6 +24,11 @@ This plugin will read from from appData that gets inserted in Premium Sociall Wa
             "sender": String, // Buildfire user id of message sender,
             "isRead": Boolean
         },
+        "navigationData": {
+            "pluginId": String,
+            "instanceId": String,
+            "folderName": String
+        },
         "_buildfire.index": {
             "number1": isActive,
             "date1": lastMessage.createdAt,
