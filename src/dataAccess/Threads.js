@@ -180,7 +180,7 @@ class Threads {
       filter: {
         "_buildfire.index.number1": 1,
         "_buildfire.index.array1.string1": user._id,
-        $text: { $search: keyword, $caseSensitive: false }
+        "_buildfire.index.text": { $regex: keyword, $options: 'i' }
       },
       sort: { "_buildfire.index.date1": -1 },
       skip,
