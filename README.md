@@ -24,6 +24,11 @@ This plugin will read from from appData that gets inserted in Premium Sociall Wa
             "sender": String, // Buildfire user id of message sender,
             "isRead": Boolean
         },
+        "navigationData": {
+            "pluginId": String,
+            "instanceId": String,
+            "folderName": String
+        },
         "_buildfire.index": {
             "number1": isActive,
             "date1": lastMessage.createdAt,
@@ -58,5 +63,6 @@ Be sure to be in the plugin's folder while running the following commands:
 * `$ npm run build` - Builds the plugin to be [submitted to the Marketplace](https://github.com/BuildFire/sdk/wiki/How-to-submit-your-plugin)
 
 
-
+Tech spec link 
+https://docs.google.com/document/d/1PR36BxeHFkj-V40VgThxRWYyeTcpZJLDoHVHnE6l89g/edit?ts=5e726e0b#
 
