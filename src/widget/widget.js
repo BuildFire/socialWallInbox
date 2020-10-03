@@ -134,7 +134,6 @@ const debounce = (fn, time) => {
 
 
 function initWidget(user) {
-  console.log(user)
   loggedInUser = user;
   Threads.getThreads(user, 0, 20, (err, threads) => {
     reloadMessages(threads, true);
@@ -154,7 +153,6 @@ function initWidget(user) {
       leadIcon.style.width = '20px';
       leadIcon.innerHTML = 'done';
       searched = null;
-      console.log('uuu')
       return Threads.getThreads(loggedInUser, 0, 20, (err, threads) => {
         reloadMessages(threads, true);
       });
