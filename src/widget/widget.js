@@ -89,6 +89,9 @@ function render(thread, otherUser, chipText) {
 
   let userStatus = chipText ? chipTemplate : '';
 
+  otherUser.displayName && otherUser.displayName.length > 7 ? 
+  otherUser.displayName = otherUser.displayName.substring(0,7) + '...' : otherUser.displayName;
+  
   element.innerHTML = thread_template
     .replace("{{displayName}}", otherUser.displayName)
     .replace("{{userStatus}}", userStatus)

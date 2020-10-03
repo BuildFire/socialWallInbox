@@ -197,5 +197,7 @@ span.mdc-chip__primary-action:focus {
     outline: none;
 }
   
-
+.mdc-list-item__primary-text {
+    text-overflow: unset;
+}
   
