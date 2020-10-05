@@ -196,6 +196,11 @@ input:focus {
 span.mdc-chip__primary-action:focus {
     outline: none;
 }
+
+.mdc-list {
+    max-height: 100vh;
+    overflow: scroll;
+}
   
 .mdc-list-item__primary-text {
     text-overflow: unset;
