@@ -20,17 +20,46 @@
   <script src="../../../scripts/buildfire.min.js"></script>
   <link href="../../../styles/materialDesign/material-components-web@4.0.0.min.css" rel="stylesheet" />
   <link href="./style.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <script src="../../../scripts/materialDesign/material-components-web@4.0.0.min.js" type="text/javascript"></script>
 </head>
 
 <body>
+  <div class="mdc-card search-card">
+    <div class="inner-search-container">
+      <span class="material-icons icon" id="searchIcon">search</span>
+      <input class="mdc-theme--text-primary-on-background" type="text" name="search" id="searchTxt" placeholder="Search"
+        autocomplete="off">
+    </div>
+  </div>
+  <div class="searchFilters" id="searchFilters" style="display: none;">
+    <div class="mdc-chip" role="row" style="margin: 10px;" id="filterLead">
+      <div class="mdc-chip__ripple"></div>
+      <i class="material-icons mdc-chip__icon mdc-chip__icon--leading" id="leadIcon">done</i>
+      <span role="gridcell">
+        <span role="button" tabindex="0" class="mdc-chip__primary-action">
+          <span class="mdc-chip__text"> Lead</span>
+        </span>
+      </span>
+    </div>
+    <div class="mdc-chip" role="row" style="margin: 10px;" id="filterCustomer">
+      <div class="mdc-chip__ripple"></div>
+      <i class="material-icons mdc-chip__icon mdc-chip__icon--leading" id="customerIcon">done</i>
+      <span role="gridcell">
+        <span role="button" tabindex="0" class="mdc-chip__primary-action">
+          <span class="mdc-chip__text">Customer</span>
+        </span>
+      </span>
+    </div>
+  </div>
+  <!--
   <form class="search-container" id="searchForm">
     <input type="text" placeholder="Search..." class="search-input" id="searchInput" />
     <button class="mdc-icon-button search-icon" type="submit">
       <icon class="icon icon-search material-icons"></icon>
     </button>
-  </form>
+  </form>-->
   <div role="separator" class="mdc-list-divider"></div>
   <ul class="mdc-list mdc-list--two-line mdc-list--avatar-list" id="inboxMessages">
   </ul>
@@ -46,13 +75,13 @@
     <img class="mdc-list-item__graphic profile-image" src="{{imageUrl}}" alt="Profile" />
     <div class="red-dot dangerBackgroundTheme" style="visibility:{{visibility}}"></div>
     <div class="mdc-list-item__text">
-      <span class="mdc-list-item__primary-text primaryTextTheme"><strong>{{displayName}}</strong></span>
+      <span class="mdc-list-item__primary-text primaryTextTheme"><strong>{{displayName}}</strong>{{userStatus}}</span>
       <span class="second-line primaryTextTheme">
         {{lastMessage}}
       </span>
     </div>
     <div class="mdc-list-item__meta mdc-icon-button material-icons" aria-hidden="true">
-      <icon class="material-icons icon icon-bubbles2"></icon>
+      <icon class="material-icons icon">forum</icon>
     </div>
   </li>
   <li role="separator" class="mdc-list-divider"></li>
