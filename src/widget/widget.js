@@ -1,5 +1,6 @@
 import Threads from "../dataAccess/Threads";
 import authManager from "../dataAccess/authManager";
+import UserShared from "../dataAccess/UserShared";
 
 authManager.onUserChange = initWidget;
 
@@ -19,32 +20,35 @@ function reloadMessages(threads, clearOldThreads) {
     hideEmptyState();
   }
   const inboxMessages = document.getElementById("inboxMessages");
-  leads = [], customers = [];
-  if (clearOldThreads) inboxMessages.innerHTML = "";
-  buildfire.appData.get('jackpro', (err, jackPros) => {
-    if (err) console.log(err);
-    if (jackPros && jackPros.data.length) jackPros.data.find(pro => pro.id === loggedInUser._id) ? currentUserPro = true : currentUserPro = false;
-    threads.forEach((thread) => {
-      let chipText = null;
-      let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
-      if (!otherUser) otherUser = thread.users[0];
-      if (currentUserPro) {
-        searchFilters.style.display = 'block';
-        let otherUserCustomer = false;
-        buildfire.appData.search({
-          filter: { $and: [{ "$json.customerId": otherUser._id }, { "$json.taxProfessionalId": loggedInUser._id },] }
-        }, 'taxes', (err, result) => {
-          if (err) console.log(err);
-          if (result && result.length) otherUserCustomer = true;
-          if (otherUserCustomer) { leads.push(thread); chipText = 'Lead'; }
-          else { customers.push(thread); chipText = 'Customer'; }
-          render(thread, otherUser, chipText);
-        });
+  if (clearOldThreads) {
+    inboxMessages.innerHTML = "";
+    leads = [], customers = [];
+  }
+
+  threads.forEach((thread) => {
+    let chipText = null;
+    let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
+    if (!otherUser) otherUser = thread.users[0];
+    searchFilters.style.display = 'block';
+    let otherUserCustomer = false;
+    UserShared.isUserCusomer(loggedInUser.email, otherUser.email, (err, isCustomer) => {
+      if (isCustomer) {
+        chipText = "Customer";
+        customers.push(thread);
       } else {
-        jackPros.data.find(pro => pro.id === otherUser._id) ? chipText = 'Jack PRO' : null;
-        render(thread, otherUser, chipText);
+        chipText = "Lead";
+        leads.push(thread);
       }
-    });
+      render(thread, otherUser, chipText);
+    })
+    // buildfire.appData.search({
+    //   filter: { $and: [{ "$json.customerId": otherUser._id }, { "$json.taxProfessionalId": loggedInUser._id },] }
+    // }, 'taxes', (err, result) => {
+    //   if (err) console.log(err);
+    //   if (result && result.length) otherUserCustomer = true;
+    //   if (otherUserCustomer) { leads.push(thread); chipText = 'Lead'; }
+    //   else { customers.push(thread); chipText = 'Customer'; }
+    // });
   });
 }
 
@@ -73,11 +77,11 @@ function render(thread, otherUser, chipText) {
     thread.lastMessage.sender === otherUser._id && !thread.lastMessage.isRead;
 
   let chipIconName = chipText === 'Lead' ? 'offline_bolt' : 'check_circle';
-  let chipIcon = 
+  let chipIcon =
     currentUserPro ? `<i class="material-icons mdc-chip__icon mdc-chip__icon--leading">${chipIconName}</i>` : '';
 
   let chipTemplate = ` 
-    <div class="mdc-chip mdc-chip_over" role="row" style="margin: 10px;">
+    <div class="mdc-chip mdc-chip_over" role="row">
     <div class="mdc-chip__ripple"></div>
     ${chipIcon}
     <span role="gridcell">
@@ -89,9 +93,9 @@ function render(thread, otherUser, chipText) {
 
   let userStatus = chipText ? chipTemplate : '';
 
-  otherUser.displayName && otherUser.displayName.length > 7 ? 
-  otherUser.displayName = otherUser.displayName.substring(0,7) + '...' : otherUser.displayName;
-  
+  otherUser.displayName && otherUser.displayName.length > 13 ?
+    otherUser.displayName = otherUser.displayName.substring(0, 13) + '...' : otherUser.displayName;
+
   element.innerHTML = thread_template
     .replace("{{displayName}}", otherUser.displayName)
     .replace("{{userStatus}}", userStatus)
@@ -102,12 +106,20 @@ function render(thread, otherUser, chipText) {
   element.onclick = () => {
     if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => { });
 
+    let actionItem = {
+      "type": "navigation",
+      "action": "linkToApp",
+      "pluginId": "efd0b9fc-9875-44da-ad18-2256a710f6fe",
+      "title": "Secure File Manager",
+      "iconUrl": "https://pluginserver.buildfire.com/plugins/4e97861a-2a10-4205-8d47-cdaaae690eff/resources/icon.png"
+    }
+    actionItem = JSON.stringify(actionItem);
     buildfire.navigation.navigateTo({
       pluginId: thread.navigationData.pluginId,
       instanceId: thread.navigationData.instanceId,
       folderName: thread.navigationData.folderName,
       title: thread.wallTitle,
-      queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle,
+      queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle + "&actionItem=" + actionItem,
     });
   };
 
