@@ -25,34 +25,29 @@ function reloadMessages(threads, clearOldThreads) {
     leads = [], customers = [];
   }
 
-  threads.forEach((thread) => {
-    let chipText = null;
+  threads.forEach((thread, index) => {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
-    searchFilters.style.display = 'block';
-    let otherUserCustomer = false;
-    UserShared.isUserCusomer(loggedInUser.email, otherUser.email, (err, isCustomer) => {
-      if (isCustomer) {
-        chipText = "Customer";
-        customers.push(thread);
-      } else {
-        chipText = "Lead";
-        leads.push(thread);
-      }
-      render(thread, otherUser, chipText);
-    })
-    // buildfire.appData.search({
-    //   filter: { $and: [{ "$json.customerId": otherUser._id }, { "$json.taxProfessionalId": loggedInUser._id },] }
-    // }, 'taxes', (err, result) => {
-    //   if (err) console.log(err);
-    //   if (result && result.length) otherUserCustomer = true;
-    //   if (otherUserCustomer) { leads.push(thread); chipText = 'Lead'; }
-    //   else { customers.push(thread); chipText = 'Customer'; }
-    // });
+    searchFilters.style.display = 'flex';
+    checkCustomerAndRender(otherUser, thread, index)
   });
 }
 
-function render(thread, otherUser, chipText) {
+function checkCustomerAndRender(otherUser, thread, index) {
+  UserShared.isUserCusomer(loggedInUser.email, otherUser.email, (err, isCustomer) => {
+    let chipText = null;
+    if (isCustomer) {
+      chipText = "Customer";
+      customers.push(thread);
+    } else {
+      chipText = "Lead";
+      leads.push(thread);
+    }
+    render(thread, otherUser, chipText, index);
+  })
+}
+
+function render(thread, otherUser, chipText, index) {
   let thread_template = document.getElementById("thread-ui-template").innerHTML;
   let imageUrl;
   if (otherUser.imageUrl)
@@ -93,9 +88,6 @@ function render(thread, otherUser, chipText) {
 
   let userStatus = chipText ? chipTemplate : '';
 
-  otherUser.displayName && otherUser.displayName.length > 13 ?
-    otherUser.displayName = otherUser.displayName.substring(0, 13) + '...' : otherUser.displayName;
-
   element.innerHTML = thread_template
     .replace("{{displayName}}", otherUser.displayName)
     .replace("{{userStatus}}", userStatus)
@@ -103,13 +95,15 @@ function render(thread, otherUser, chipText) {
     .replace("{{lastMessage}}", lastMessageText)
     .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
 
+  element.dataset.index = index;
+
   element.onclick = () => {
     if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => { });
 
     let actionItem = {
       "type": "navigation",
       "action": "linkToApp",
-      "pluginId": "efd0b9fc-9875-44da-ad18-2256a710f6fe",
+      "pluginId": "f25fc64e-7abe-474a-9245-d91d2026ff5b",
       "title": "Secure File Manager",
       "iconUrl": "https://pluginserver.buildfire.com/plugins/4e97861a-2a10-4205-8d47-cdaaae690eff/resources/icon.png"
     }
@@ -122,8 +116,22 @@ function render(thread, otherUser, chipText) {
       queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle + "&actionItem=" + actionItem,
     });
   };
-
-  inboxMessages.appendChild(element);
+  if (typeof index === "undefined") {
+    inboxMessages.appendChild(element);
+  } else {
+    let inserted = false;
+    for (let i = 0; i < inboxMessages.children.length; i++) {
+      let child = inboxMessages.children[i];
+      if (child.dataset && child.dataset.index > index) {
+        inboxMessages.insertBefore(element, child);
+        inserted = true;
+        return;
+      }
+    }
+    if (!inserted) {
+      inboxMessages.appendChild(element);
+    }
+  }
 }
 
 function loadFilteredMessages(threads) {
