@@ -76,10 +76,15 @@
     <img class="mdc-list-item__graphic profile-image" src="{{imageUrl}}" alt="Profile" />
     <div class="red-dot dangerBackgroundTheme" style="visibility:{{visibility}}"></div>
     <div class="mdc-list-item__text full_width">
-      <span class="mdc-list-item__primary-text primaryTextTheme full_width"><strong>{{displayName}}</strong>{{userStatus}}</span>
-      <span class="second-line primaryTextTheme">
-        {{lastMessage}}
-      </span>
+      <div style="margin-top:5px;">
+        {{userStatus}}
+      </div>
+      <div>
+        <span class="mdc-list-item__primary-text primaryTextTheme full_width"><span class="full-name"><strong>{{displayName}}</strong></div></span>
+        <span class="second-line primaryTextTheme">
+          {{lastMessage}}
+        </span>
+      </div>
     </div>
     <div class="mdc-list-item__meta mdc-icon-button material-icons" aria-hidden="true">
       <icon class="material-icons icon">forum</icon>
