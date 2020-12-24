@@ -55,7 +55,7 @@ function render(thread, otherUser, chipText, index) {
       size: "xs",
       aspect: "1:1",
     });
-  else imageUrl = "./.images/avatar.png";
+  else imageUrl = "./images/avatar.png";
   let element = document.createElement("div");
 
   let time = new Date(thread.lastMessage.createdAt);
