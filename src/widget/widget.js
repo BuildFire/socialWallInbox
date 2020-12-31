@@ -16,50 +16,59 @@ function reloadMessages(threads, clearOldThreads) {
   const inboxMessages = document.getElementById("inboxMessages");
   let thread_template = document.getElementById("thread-ui-template").innerHTML;
   if (clearOldThreads) inboxMessages.innerHTML = "";
+  let elementsToAppend=[];
   threads.forEach((thread) => {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
-    let imageUrl;
-    if (otherUser.imageUrl)
-      imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
-        size: "xs",
-        aspect: "1:1",
-      });
-    else imageUrl = "./.images/avatar.png";
-    let element = document.createElement("div");
+    buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
+      if(!err)otherUser=loadUser;
+      let imageUrl;
+      if (otherUser.imageUrl)
+        imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
+          size: "xs",
+          aspect: "1:1",
+        });
+      else imageUrl = "./.images/avatar.png";
+      let element = document.createElement("div");
+  
+      let time = new Date(thread.lastMessage.createdAt);
+  
+      if (isToday(time)) {
+        time = time.toLocaleTimeString().slice(0, 5) + " - ";
+      } else {
+        time = time.toDateString().slice(4, 10) + " - ";
+      }
+  
+      const lastMessageText = time + unescape(thread.lastMessage.text);
+  
+      const redDotVisible =
+        thread.lastMessage.sender === otherUser._id && !thread.lastMessage.isRead;
 
-    let time = new Date(thread.lastMessage.createdAt);
-
-    if (isToday(time)) {
-      time = time.toLocaleTimeString().slice(0, 5) + " - ";
-    } else {
-      time = time.toDateString().slice(4, 10) + " - ";
-    }
-
-    const lastMessageText = time + unescape(thread.lastMessage.text);
-
-    const redDotVisible =
-      thread.lastMessage.sender === otherUser._id && !thread.lastMessage.isRead;
-
-    element.innerHTML = thread_template
-      .replace("{{displayName}}", otherUser.displayName)
-      .replace("{{imageUrl}}", imageUrl)
-      .replace("{{lastMessage}}", lastMessageText)
-      .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
-
-    element.onclick = () => {
-      if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-
-      buildfire.navigation.navigateTo({
-        pluginId: thread.navigationData.pluginId,
-        instanceId: thread.navigationData.instanceId,
-        folderName: thread.navigationData.folderName,
-        title: thread.wallTitle,
-        queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle,
-      });
-    };
-
-    inboxMessages.appendChild(element);
+        element.innerHTML = thread_template
+        .replace("{{displayName}}", otherUser.displayName)
+        .replace("{{imageUrl}}", imageUrl)
+        .replace("{{lastMessage}}", lastMessageText)
+        .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+  
+      element.onclick = () => {
+        if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
+  
+        buildfire.navigation.navigateTo({
+          pluginId: thread.navigationData.pluginId,
+          instanceId: thread.navigationData.instanceId,
+          folderName: thread.navigationData.folderName,
+          title: thread.wallTitle,
+          queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle,
+        });
+      };
+      elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
+      if(elementsToAppend.length==threads.length){
+        elementsToAppend=elementsToAppend.sort((a, b)=>{return new Date(b.time)-new Date(a.time);});
+        elementsToAppend.forEach(toDiv=>{
+          inboxMessages.appendChild(toDiv.obj);
+        })
+      }
+    });
   });
 }
 
