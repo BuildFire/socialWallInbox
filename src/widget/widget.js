@@ -2,6 +2,7 @@ import Threads from "../dataAccess/Threads";
 import authManager from "../dataAccess/authManager";
 import UserShared from "../dataAccess/UserShared";
 
+let firstLoad=false;
 authManager.onUserChange = initWidget;
 
 authManager.enforceLogin();
@@ -13,27 +14,37 @@ let leads = [];
 let customers = [];
 let searched = null;
 
-function reloadMessages(threads, clearOldThreads) {
+function reloadMessages(threads) {
   if (threads.length === 0) {
     showEmptyState();
   } else {
     hideEmptyState();
   }
   const inboxMessages = document.getElementById("inboxMessages");
-  if (clearOldThreads) {
-    inboxMessages.innerHTML = "";
-    leads = [], customers = [];
-  }
-
+  inboxMessages.innerHTML = "";
+  leads = [], customers = [];
+  let elementsToAppend=[];
+  
   threads.forEach((thread, index) => {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
     searchFilters.style.display = 'flex';
-    checkCustomerAndRender(otherUser, thread, index)
+    buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
+      if(!err)otherUser=loadUser;
+      checkCustomerAndRender(otherUser, thread, index,(data)=>{
+        elementsToAppend.push(data);
+        if(elementsToAppend.length==threads.length){
+          elementsToAppend=elementsToAppend.sort((a, b)=>{return new Date(b.time)-new Date(a.time);});
+          elementsToAppend.forEach(toDiv=>{
+            inboxMessages.appendChild(toDiv.obj);
+          })
+        }
+      });
+    });
   });
 }
 
-function checkCustomerAndRender(otherUser, thread, index) {
+function checkCustomerAndRender(otherUser, thread, index,callback) {
   UserShared.isUserCusomer(loggedInUser.email, otherUser.email, (err, isCustomer) => {
     let chipText = null;
     if (isCustomer) {
@@ -43,11 +54,11 @@ function checkCustomerAndRender(otherUser, thread, index) {
       chipText = "Lead";
       leads.push(thread);
     }
-    render(thread, otherUser, chipText, index);
+    render(thread, otherUser, chipText, index,(data)=>{callback(data);});
   })
 }
 
-function render(thread, otherUser, chipText, index) {
+function render(thread, otherUser, chipText, index,callback) {
   let thread_template = document.getElementById("thread-ui-template").innerHTML;
   let imageUrl;
   if (otherUser.imageUrl)
@@ -116,30 +127,27 @@ function render(thread, otherUser, chipText, index) {
       queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle + "&actionItem=" + actionItem,
     });
   };
-  if (typeof index === "undefined") {
-    inboxMessages.appendChild(element);
-  } else {
-    let inserted = false;
-    for (let i = 0; i < inboxMessages.children.length; i++) {
-      let child = inboxMessages.children[i];
-      if (child.dataset && child.dataset.index > index) {
-        inboxMessages.insertBefore(element, child);
-        inserted = true;
-        return;
-      }
-    }
-    if (!inserted) {
-      inboxMessages.appendChild(element);
-    }
-  }
+  callback({time:thread.lastMessage.createdAt,obj:element});
 }
 
 function loadFilteredMessages(threads) {
   inboxMessages.innerHTML = "";
-  threads.forEach((thread) => {
+  let elementsToAppend=[];
+  threads.forEach((thread,index) => {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
-    render(thread, otherUser, searched);
+    buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
+      if(!err)otherUser=loadUser;
+      render(thread, otherUser, searched,index,(data)=>{
+        elementsToAppend.push(data);
+        if(elementsToAppend.length==threads.length){
+          elementsToAppend=elementsToAppend.sort((a, b)=>{return new Date(b.time)-new Date(a.time);});
+          elementsToAppend.forEach(toDiv=>{
+            inboxMessages.appendChild(toDiv.obj);
+          })
+        }else inboxMessages.innerHTML = "";
+      });
+    });
   });
 }
 
@@ -156,13 +164,13 @@ const debounce = (fn, time) => {
 function initWidget(user) {
   loggedInUser = user;
   Threads.getThreads(user, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
+    reloadMessages(threads);
   });
-
+  if(!firstLoad)
   searchTxt.addEventListener('keyup', debounce(function (e) {
     onSearch(e);
-  }, 300));
-
+  }, 500));
+  firstLoad=true;
   buildfire.appearance.getAppTheme((err, obj) => {
     document.documentElement.style.setProperty("--barColor", obj.colors.titleBarTextAndIcons);
     document.documentElement.style.setProperty("--barBGColor", obj.colors.titleBar);
@@ -174,7 +182,7 @@ function initWidget(user) {
       leadIcon.innerHTML = 'done';
       searched = null;
       return Threads.getThreads(loggedInUser, 0, 20, (err, threads) => {
-        reloadMessages(threads, true);
+        reloadMessages(threads);
       });
     } else if (searched === 'Lead') {
       customerIcon.style.width = '20px';
@@ -191,7 +199,7 @@ function initWidget(user) {
       customerIcon.innerHTML = 'done';
       searched = null;
       return Threads.getThreads(loggedInUser, 0, 20, (err, threads) => {
-        reloadMessages(threads, true);
+        reloadMessages(threads);
       });
     }
     else if (searched === 'Customer') {
@@ -213,10 +221,15 @@ function onSearch(e) {
   customerIcon.style.width = '20px'; customerIcon.innerHTML = 'done';
   searched = null;
   let keyword = document.getElementById("searchTxt").value;
-  if (keyword.length === 0) return initWidget(loggedInUser);
-  Threads.search(loggedInUser, keyword, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
-  });
+  if (keyword.length === 0){
+    Threads.getThreads(loggedInUser, 0, 20, (err, threads) => {
+      reloadMessages(threads);
+    });
+  }else {
+    Threads.search(loggedInUser, keyword, 0, 20, (err, threads) => {
+      reloadMessages(threads);
+    });
+  }
 }
 
 function showEmptyState() {
