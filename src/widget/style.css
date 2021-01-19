@@ -200,6 +200,7 @@ span.mdc-chip__primary-action:focus {
   position: absolute;
   overflow-y: scroll;
   height: 75vh;
+  width: 100%;
 }
 
 .mdc-list-item__primary-text {
