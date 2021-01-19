@@ -9,7 +9,7 @@ authManager.enforceLogin();
 
 let loggedInUser = {};
 let currentUserPro = false;
-
+let currentUserCustomer = true;
 let leads = [];
 let customers = [];
 let searched = null;
@@ -28,7 +28,7 @@ function reloadMessages(threads) {
   threads.forEach((thread, index) => {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
-    searchFilters.style.display = 'flex';
+    if(!currentUserCustomer) searchFilters.style.display = 'flex';
     buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
       if(!err)otherUser=loadUser;
       checkCustomerAndRender(otherUser, thread, index,(data)=>{
@@ -97,7 +97,7 @@ function render(thread, otherUser, chipText, index,callback) {
     </span>
   </div>`;
 
-  let userStatus = chipText ? chipTemplate : '';
+  let userStatus = chipText && !currentUserCustomer ? chipTemplate : '';
 
   element.innerHTML = thread_template
     .replace("{{displayName}}", otherUser.displayName)
@@ -163,9 +163,13 @@ const debounce = (fn, time) => {
 
 function initWidget(user) {
   loggedInUser = user;
-  Threads.getThreads(user, 0, 20, (err, threads) => {
-    reloadMessages(threads);
+  buildfire.appData.search({filter: {"$json.user.userId": loggedInUser._id}}, 'taxInfo', (err, result) => {
+    if(result && result.length) currentUserCustomer = false;
+    Threads.getThreads(user, 0, 20, (err, threads) => {
+      reloadMessages(threads);
+    });
   });
+  
   if(!firstLoad)
   searchTxt.addEventListener('keyup', debounce(function (e) {
     onSearch(e);

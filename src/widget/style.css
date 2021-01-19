@@ -197,8 +197,9 @@ span.mdc-chip__primary-action:focus {
 }
 
 .mdc-list {
-  max-height: 100vh;
-  overflow: scroll;
+  position: absolute;
+  overflow-y: scroll;
+  height: 75vh;
 }
 
 .mdc-list-item__primary-text {
@@ -221,4 +222,8 @@ span.mdc-chip__primary-action:focus {
   white-space: nowrap;
   display: inline-block;
   overflow: hidden;
+}
+
+.mdc-list--two-line .mdc-list-item__text {
+  align-self: center;
 }
