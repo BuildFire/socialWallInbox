@@ -199,8 +199,10 @@ span.mdc-chip__primary-action:focus {
 .mdc-list {
   position: absolute;
   overflow-y: scroll;
+  overflow-x: hidden;
   height: 75vh;
-  width: 100%;
+  left: 0;
+  right: 0;
 }
 
 .mdc-list-item__primary-text {
