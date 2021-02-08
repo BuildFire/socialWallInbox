@@ -137,7 +137,7 @@ function render(thread, otherUser, chipText, index,callback) {
           }
           actionItem = JSON.stringify(actionItem);
           navigate();
-        }
+        } else { actionItem = null; navigate(); }
       });
       
     } else {
