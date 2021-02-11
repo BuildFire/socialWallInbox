@@ -197,10 +197,9 @@ span.mdc-chip__primary-action:focus {
 }
 
 .mdc-list {
-  position: absolute;
-  overflow-y: scroll;
-  height: 75vh;
-  width: 100%;
+  max-height: calc(100vh - 115px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .mdc-list-item__primary-text {
