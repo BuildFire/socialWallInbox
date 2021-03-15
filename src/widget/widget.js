@@ -127,3 +127,8 @@ function injectThemeStyle() {
     
   });
 }
+
+let goBack = buildfire.navigation.onBackButtonClick;
+buildfire.navigation.onBackButtonClick = function() {
+   goBack();
+}
