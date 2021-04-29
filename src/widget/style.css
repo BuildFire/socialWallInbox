@@ -1,145 +1,154 @@
 @font-face {
-    font-family: 'icomoon';
-    src:  url('./fonts/icomoon.eot?67ikxv');
-    src:  url('./fonts/icomoon.eot?67ikxv#iefix') format('embedded-opentype'),
-        url('./fonts/icomoon.ttf?67ikxv') format('truetype'),
-        url('./fonts/icomoon.woff?67ikxv') format('woff'),
-        url('./fonts/icomoon.svg?67ikxv#icomoon') format('svg');
-    font-weight: normal;
-    font-style: normal;
-    font-display: block;
+  font-family: "icomoon";
+  src: url("./fonts/icomoon.eot?67ikxv");
+  src: url("./fonts/icomoon.eot?67ikxv#iefix") format("embedded-opentype"),
+    url("./fonts/icomoon.ttf?67ikxv") format("truetype"),
+    url("./fonts/icomoon.woff?67ikxv") format("woff"),
+    url("./fonts/icomoon.svg?67ikxv#icomoon") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
 }
-  
-[class^="icon-"], [class*=" icon-"] {
-    /* use !important to prevent issues with browser extensions that change fonts */
-    font-family: 'icomoon' !important;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1;
 
-    /* Better Font Rendering =========== */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+[class^="icon-"],
+[class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: "icomoon" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-  
+
 .icon-drawer2:before {
-    content: "\e95d";
+  content: "\e95d";
 }
 .icon-bubbles2:before {
-    content: "\e96d";
+  content: "\e96d";
 }
 .icon-search:before {
-    content: "\e986";
+  content: "\e986";
 }
-    
 
 body {
-    margin: 0;
+  margin: 0;
 }
 
 #inboxMessages {
-    padding-top: 0;
+  padding-top: 0;
 }
 
 .profile-image {
-    object-fit: cover;
+  object-fit: cover;
 }
 
 .fullWidth {
-    width: 100%;
+  width: 100%;
 }
 
 .search-container {
-    width: 100vw;
-    height: 50px;
-    display: flex;
-    align-items: center;
+  width: 100vw;
+  height: 50px;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
-    margin-left: 30px;
-    margin-right: 20px;
-    width: 100%;
-    font-size: medium;
-    background-color: rgba(0, 0, 0, 0);
-    border: none;
-    -webkit-appearance: none;
-    outline: none;
+  margin-left: 30px;
+  margin-right: 20px;
+  width: 100%;
+  font-size: medium;
+  background-color: rgba(0, 0, 0, 0);
+  border: none;
+  -webkit-appearance: none;
+  outline: none;
 }
 
 .search-icon {
-    margin-right: 15px;
+  margin-right: 15px;
 }
 
 #emptyState {
-    visibility: hidden;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+  visibility: hidden;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .empty-icon {
-    font-size: xx-large;
+  font-size: xx-large;
 }
 
 .second-line {
-    margin-top: 7px;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased;
-    font-size: .875rem;
-    line-height: 1.25rem;
-    font-weight: 400;
-    letter-spacing: .0178571429em;
-    text-decoration: inherit;
-    text-transform: inherit;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    display: block;
-    line-height: normal;
-    display: block;
+  margin-top: 7px;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0.0178571429em;
+  text-decoration: inherit;
+  text-transform: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  display: block;
+  line-height: normal;
+  display: block;
 }
 
 .ml-10 {
-    margin-left: 10px;
+  margin-left: 10px;
 }
 
 .red-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 10px;
-    position: absolute;
-    top: 15px;
-    left: 47px;
+  width: 10px;
+  height: 10px;
+  border-radius: 10px;
+  position: absolute;
+  top: 15px;
+  left: 47px;
 }
 
 .slide-right {
-	-webkit-animation: slide-right 0.3s ease-in-out both;
-	        animation: slide-right 0.3s ease-in-out both;
+  -webkit-animation: slide-right 0.3s ease-in-out both;
+  animation: slide-right 0.3s ease-in-out both;
 }
 
- @-webkit-keyframes slide-right {
-    0% {
-      -webkit-transform: translateX(100%);
-              transform: translateX(100%);
-    }
-    100% {
-      -webkit-transform: translateX(0);
-              transform: translateX(0);
-    }
+@-webkit-keyframes slide-right {
+  0% {
+    -webkit-transform: translateX(100%);
+    transform: translateX(100%);
   }
-  @keyframes slide-right {
-    0% {
-      -webkit-transform: translateX(100%);
-              transform: translateX(100%);
-    }
-    100% {
-      -webkit-transform: translateX(0);
-              transform: translateX(0);
-    }
+  100% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
   }
+}
+@keyframes slide-right {
+  0% {
+    -webkit-transform: translateX(100%);
+    transform: translateX(100%);
+  }
+  100% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+}
+
+.mdc-list {
+  position: absolute;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  height: 90vh;
+  left: 0;
+  right: 0;
+}
