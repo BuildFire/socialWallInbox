@@ -7,6 +7,35 @@ authManager.enforceLogin();
 
 let loggedInUser = {};
 
+buildfire.messaging.onReceivedMessage =msg=>{
+  if(msg.type=="refresh") /// message comes from the strings page on the control side
+      location.reload();
+};
+
+function initStrings() {
+  let strings = new buildfire.services.Strings("en-us", stringsConfig);
+  window.strings = strings;
+  strings.init().then(s=>{
+    loadStrings();
+  });
+}
+
+function loadStrings(){
+  let languageStrings={
+    searchText:"Search...",
+    noResultsFound:"No results found"
+  };
+
+  Object.keys(languageStrings).forEach(function(key) {
+    languageStrings[key] = strings.get("general."+key)?strings.get("general."+key):languageStrings[key];
+  });
+
+  document.getElementById('searchInput').placeholder=languageStrings.searchText;
+  document.getElementById('noResultsFound').innerHTML=languageStrings.noResultsFound;
+}
+
+initStrings();
+
 function reloadMessages(threads, clearOldThreads) {
   if (threads.length === 0) {
     showEmptyState();

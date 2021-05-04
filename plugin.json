@@ -13,7 +13,9 @@
     "settings": {
       "enabled": false
     },
-    "customTabs": [{ "title": "Tests", "url": "/tests/index.html" }]
+    "customTabs": [
+      { "title": "Language", "url": "/strings/index.html" },
+      { "title": "Tests", "url": "/tests/index.html" }]
   },
   "widget": {},
   "features": [],

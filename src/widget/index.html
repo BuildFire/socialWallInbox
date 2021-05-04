@@ -21,12 +21,14 @@
   <link href="../../../styles/materialDesign/material-components-web@4.0.0.min.css" rel="stylesheet" />
   <link href="./style.css" rel="stylesheet" />
 
+  <script src="js/shared/strings.js"></script>
+  <script src="js/shared/stringsConfig.js"></script>
   <script src="../../../scripts/materialDesign/material-components-web@4.0.0.min.js" type="text/javascript"></script>
 </head>
 
 <body>
   <form class="search-container" id="searchForm">
-    <input type="text" placeholder="Search..." class="search-input" id="searchInput" />
+    <input type="text" placeholder="" class="search-input" id="searchInput" />
     <button class="mdc-icon-button search-icon" type="submit">
       <icon class="icon icon-search material-icons"></icon>
     </button>
@@ -37,7 +39,7 @@
     </ul>
   </div>
   <div id="emptyState">
-    <span class="primaryTextTheme">No results found</span>
+    <span id="noResultsFound" class="primaryTextTheme"></span>
     <icon class="material-icons icon icon-drawer2 empty-icon"></icon>
   </div>
 </body>

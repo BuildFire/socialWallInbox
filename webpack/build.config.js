@@ -29,8 +29,7 @@ const WebpackConfig = {
   },
 
   module: {
-    rules: [
-      {
+    rules: [{
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
         use: {
@@ -44,7 +43,12 @@ const WebpackConfig = {
         test: /\.css$/,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: { loader: 'css-loader', options: { minimize: true } }
+          use: {
+            loader: 'css-loader',
+            options: {
+              minimize: true
+            }
+          }
         })
       }
     ]
@@ -55,35 +59,60 @@ const WebpackConfig = {
     new HtmlWebpackPlugin({
       filename: 'control/content/index.html',
       inject: true,
-      minify: { removeComments: true, collapseWhitespace: true },
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
       template: path.join(__dirname, '../src/control/content/index.html'),
       chunks: ['control/content/content']
     }),
     new HtmlWebpackPlugin({
       filename: 'control/design/index.html',
       inject: true,
-      minify: { removeComments: true, collapseWhitespace: true },
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
       template: path.join(__dirname, '../src/control/design/index.html'),
       chunks: ['control/design/design']
     }),
     new HtmlWebpackPlugin({
       filename: 'control/settings/index.html',
       inject: true,
-      minify: { removeComments: true, collapseWhitespace: true },
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
       template: path.join(__dirname, '../src/control/settings/index.html'),
       chunks: ['control/settings/settings']
     }),
     new HtmlWebpackPlugin({
       filename: "control/tests/index.html",
       inject: true,
-      minify: { removeComments: true, collapseWhitespace: true },
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
       template: path.join(__dirname, "../src/control/tests/index.html"),
       chunks: ["control/tests/tests"]
     }),
     new HtmlWebpackPlugin({
+      filename: 'control/strings/index.html',
+      inject: true,
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
+      template: path.join(__dirname, '../src/control/strings/index.html'),
+      chunks: ['devServer', 'control/strings/strings']
+    }),
+    new HtmlWebpackPlugin({
       filename: 'widget/index.html',
       inject: true,
-      minify: { removeComments: true, collapseWhitespace: true },
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true
+      },
       template: path.join(__dirname, '../src/widget/index.html'),
       chunks: ['widget/widget']
     }),
@@ -99,10 +128,23 @@ const WebpackConfig = {
     }, {
       from: path.join(__dirname, '../plugin.json'),
       to: path.join(__dirname, '../dist/plugin.json'),
-    }
-    ], {
+    }], {
       ignore: ['*.js', '*.html', '*.md']
     }),
+    new CopyWebpackPlugin([
+      {
+        from: path.join(__dirname, '../src/widget/js/shared/stringsConfig.js'),
+        to: path.join(__dirname, '../dist/widget/js/shared/stringsConfig.js'),
+      },
+      {
+        from: path.join(__dirname, '../src/widget/js/shared/strings.js'),
+        to: path.join(__dirname, '../dist/widget/js/shared/strings.js'),
+      },
+      {
+        from: path.join(__dirname, '../src/control/strings/js/stringsUI.js'),
+        to: path.join(__dirname, '../dist/control/strings/js/stringsUI.js'),
+      }
+    ]),
     new ExtractTextPlugin('[name].css'),
     new ZipWebpackPlugin({
       path: path.join(__dirname, '../'),

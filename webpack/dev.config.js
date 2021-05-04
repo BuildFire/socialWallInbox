@@ -90,6 +90,13 @@ const WebpackConfig = {
       chunks: ["control/tests/tests"]
     }),
     new HtmlWebpackPlugin({
+      filename: 'control/strings/index.html',
+      inject: true,
+      minify: { removeComments: true, collapseWhitespace: true },
+      template: path.join(__dirname, '../src/control/strings/index.html'),
+      chunks: ['devServer', 'control/strings/strings']
+    }),
+    new HtmlWebpackPlugin({
       filename: "widget/index.html",
       inject: true,
       minify: { removeComments: true, collapseWhitespace: true },
@@ -136,6 +143,20 @@ const WebpackConfig = {
         from: path.join(__dirname, "../../../fonticons"),
         to: path.join(__dirname, "../fonticons")
       }
+    ]),
+    new CopyWebpackPlugin([
+      {
+        from: path.join(__dirname, '../src/widget/js/shared/stringsConfig.js'),
+        to: path.join(__dirname, '../widget/js/shared/stringsConfig.js'),
+      },
+      {
+        from: path.join(__dirname, '../src/widget/js/shared/strings.js'),
+        to: path.join(__dirname, '../widget/js/shared/strings.js'),
+      },
+      {
+        from: path.join(__dirname, '../src/control/strings/js/stringsUI.js'),
+        to: path.join(__dirname, '../control/strings/js/stringsUI.js'),
+      },
     ])
   ],
 
