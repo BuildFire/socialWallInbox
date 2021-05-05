@@ -39,6 +39,7 @@ initStrings();
 function reloadMessages(threads, clearOldThreads) {
   if (threads.length === 0) {
     showEmptyState();
+    setTimeout(() => {buildfire.spinner.hide();}, 560);
   } else {
     hideEmptyState();
   }
@@ -96,12 +97,26 @@ function reloadMessages(threads, clearOldThreads) {
         elementsToAppend.forEach(toDiv=>{
           inboxMessages.appendChild(toDiv.obj);
         })
+        setTimeout(() => {buildfire.spinner.hide();}, 560);
       }
     });
   });
 }
 
+//auth
+buildfire.auth.onLogin((user) => {
+  initWidget(user);
+});
+
+buildfire.auth.onLogout(() => {//clear list of messages on logout - becouse of security concerns 
+  const inboxMessages = document.getElementById("inboxMessages");
+  inboxMessages.innerHTML="";
+  hideEmptyState();
+});
+//auth
+
 function initWidget(user) {
+  setTimeout(() => {buildfire.spinner.show();}, 150);
   loggedInUser = user;
   Threads.getThreads(user, 0, 20, (err, threads) => {
     reloadMessages(threads, true);
