@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'icomoon';
-    src:  url('./fonts/icomoon.eot?67ikxv');
-    src:  url('./fonts/icomoon.eot?67ikxv#iefix') format('embedded-opentype'),
+    src: url('./fonts/icomoon.eot?67ikxv');
+    src: url('./fonts/icomoon.eot?67ikxv#iefix') format('embedded-opentype'),
         url('./fonts/icomoon.ttf?67ikxv') format('truetype'),
         url('./fonts/icomoon.woff?67ikxv') format('woff'),
         url('./fonts/icomoon.svg?67ikxv#icomoon') format('svg');
@@ -9,8 +9,9 @@
     font-style: normal;
     font-display: block;
 }
-  
-[class^="icon-"], [class*=" icon-"] {
+
+[class^="icon-"],
+[class*=" icon-"] {
     /* use !important to prevent issues with browser extensions that change fonts */
     font-family: 'icomoon' !important;
     speak: none;
@@ -34,13 +35,15 @@
 .icon-drawer2:before {
     content: "\e95d";
 }
+
 .icon-bubbles2:before {
     content: "\e96d";
 }
+
 .icon-search:before {
     content: "\e986";
 }
-    
+
 
 body {
     margin: 0;
@@ -125,27 +128,38 @@ body {
 }
 
 .slide-right {
-	-webkit-animation: slide-right 0.3s ease-in-out both;
-	        animation: slide-right 0.3s ease-in-out both;
+    -webkit-animation: slide-right 0.3s ease-in-out both;
+    animation: slide-right 0.3s ease-in-out both;
 }
 
- @-webkit-keyframes slide-right {
+@-webkit-keyframes slide-right {
     0% {
-      -webkit-transform: translateX(100%);
-              transform: translateX(100%);
+        -webkit-transform: translateX(100%);
+        transform: translateX(100%);
     }
+
     100% {
-      -webkit-transform: translateX(0);
-              transform: translateX(0);
+        -webkit-transform: translateX(0);
+        transform: translateX(0);
     }
-  }
-  @keyframes slide-right {
+}
+
+@keyframes slide-right {
     0% {
-      -webkit-transform: translateX(100%);
-              transform: translateX(100%);
+        -webkit-transform: translateX(100%);
+        transform: translateX(100%);
     }
+
     100% {
-      -webkit-transform: translateX(0);
-              transform: translateX(0);
+        -webkit-transform: translateX(0);
+        transform: translateX(0);
     }
-  }
+}
+
+li:after {
+    content: none !important;
+}
+
+li:before {
+    content: none !important;
+}
