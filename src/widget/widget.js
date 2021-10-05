@@ -7,7 +7,7 @@ authManager.enforceLogin();
 
 let loggedInUser = {};
 
-function reloadMessages(threads, clearOldThreads) {
+function reloadMessages(threads, clearOldThreads, callback) {
   if (threads.length === 0) {
     showEmptyState();
   } else {
@@ -70,6 +70,7 @@ function reloadMessages(threads, clearOldThreads) {
       }
     });
   });
+  if(callback) callback(true);
 }
 
 function initWidget(user) {
@@ -77,7 +78,18 @@ function initWidget(user) {
   Threads.getThreads(user, 0, 20, (err, threads) => {
     reloadMessages(threads, true);
   });
-
+  let loading = false;
+  document.getElementById("inboxMessages").onscroll = () =>{
+    let container = document.getElementById("inboxMessages");
+    if (container.scrollHeight - container.scrollTop - container.clientHeight < 1){
+      loading = true;
+      Threads.getThreads(user, container.childNodes.length, 20, (err, threads)  =>{
+        reloadMessages(threads,false,(s) =>{
+          loading = false;
+        });
+      })
+    }
+  }
   let form = document.getElementById("searchForm");
   form.addEventListener("submit", onSearch);
 
