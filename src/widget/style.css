@@ -109,6 +109,11 @@ body {
     margin-left: 10px;
 }
 
+.mdc-list{
+    max-height: calc(100vh - 115px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
 .red-dot {
     width: 10px;
     height: 10px;
@@ -120,7 +125,7 @@ body {
 
 .slide-right {
 	-webkit-animation: slide-right 0.3s ease-in-out both;
-	        animation: slide-right 0.3s ease-in-out both;
+    animation: slide-right 0.3s ease-in-out both;
 }
 
  @-webkit-keyframes slide-right {
@@ -143,3 +148,10 @@ body {
               transform: translateX(0);
     }
   }
+  li:after {
+    content: none !important;
+    }
+
+    li:before {
+        content: none !important;
+    } 

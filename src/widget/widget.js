@@ -28,7 +28,7 @@ function reloadMessages(threads, clearOldThreads) {
           size: "xs",
           aspect: "1:1",
         });
-      else imageUrl = "./.images/avatar.png";
+      else imageUrl = "./images/avatar.png";
       let element = document.createElement("div");
   
       let time = new Date(thread.lastMessage.createdAt);
@@ -80,7 +80,21 @@ function initWidget(user) {
 
   let form = document.getElementById("searchForm");
   form.addEventListener("submit", onSearch);
-
+  let getMoreThreads = true;
+  let loading = false;
+  let inboxMessages = document.getElementById("inboxMessages");
+  inboxMessages.onscroll = () =>{
+    if(getMoreThreads && !loading){
+      if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1){
+        loading = true;
+        Threads.getThreads(user, document.getElementById("inboxMessages").childNodes.length, 20, (err, threads) => {
+          if(threads.length < 20) getMoreThreads = false;
+          reloadMessages(threads, false);
+          loading = false;
+        });
+      }
+    }
+  }
   injectThemeStyle();
 }
 
