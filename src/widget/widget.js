@@ -21,7 +21,8 @@ function reloadMessages(threads, clearOldThreads) {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
     buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
-      if(!err)otherUser=loadUser;
+      if(err || !loadUser) return console.error('User not found.');
+      otherUser=loadUser;
       let imageUrl;
       if (otherUser.imageUrl)
         imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
