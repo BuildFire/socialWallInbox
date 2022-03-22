@@ -21,7 +21,8 @@ function reloadMessages(threads, clearOldThreads) {
     let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
     if (!otherUser) otherUser = thread.users[0];
     buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
-      if(!err)otherUser=loadUser;
+      if(err || !loadUser) return console.error('User not found.');
+      otherUser=loadUser;
       let imageUrl;
       if (otherUser.imageUrl)
         imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
@@ -41,11 +42,11 @@ function reloadMessages(threads, clearOldThreads) {
   
       const lastMessageText = time + unescape(thread.lastMessage.text);
   
-      const redDotVisible =
+      const redDotVisible = 
         thread.lastMessage.sender === otherUser._id && !thread.lastMessage.isRead;
 
         element.innerHTML = thread_template
-        .replace("{{displayName}}", otherUser.displayName)
+        .replace("{{displayName}}", otherUser.displayName ? otherUser.displayName : otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ? otherUser.firstName : otherUser.lastName ? otherUser.lastName : "Someone")
         .replace("{{imageUrl}}", imageUrl)
         .replace("{{lastMessage}}", lastMessageText)
         .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
@@ -62,12 +63,15 @@ function reloadMessages(threads, clearOldThreads) {
         });
       };
       elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
-      if(elementsToAppend.length==threads.length){
+
+      // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
+
+      // if(elementsToAppend.length==threads.length){
         elementsToAppend=elementsToAppend.sort((a, b)=>{return new Date(b.time)-new Date(a.time);});
         elementsToAppend.forEach(toDiv=>{
           inboxMessages.appendChild(toDiv.obj);
         })
-      }
+      // }
     });
   });
 }
