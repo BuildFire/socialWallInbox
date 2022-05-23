@@ -14,24 +14,44 @@ function reloadMessages(threads, clearOldThreads) {
     hideEmptyState();
   }
   const inboxMessages = document.getElementById("inboxMessages");
-  let thread_template = document.getElementById("thread-ui-template").innerHTML;
   if (clearOldThreads) inboxMessages.innerHTML = "";
-  let elementsToAppend=[];
+  let elementsToAppend = [];
   threads.forEach((thread) => {
-    let otherUser = thread.users.find((u) => u._id !== loggedInUser._id);
-    if (!otherUser) otherUser = thread.users[0];
-    buildfire.auth.getUserProfile({userId: otherUser._id },(err,loadUser)=>{
-      if(err || !loadUser) return console.error('User not found.');
-      otherUser=loadUser;
+    let thread_template = document.getElementById("thread-ui-template").innerHTML;
+    let userIds;
+
+    if (!thread.isSupportThread) {
+      userIds = thread.users.filter(u => u._id !== loggedInUser._id).map(u => u._id);
+    } else {
+      userIds = thread.users.map(u => u._id);
+    }
+
+    buildfire.auth.getUserProfiles({ userIds }, (err, users)=> {
+      if(err || !users.length) return console.error('User not found.');
+      
+      let otherUser, otherUsers;
+
+      if (thread.isSupportThread) {
+        otherUsers = users;
+      } else {
+        otherUser = users[0];
+      }
+      
       let imageUrl;
-      if (otherUser.imageUrl)
+      if (otherUser && otherUser.imageUrl) {
         imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
           size: "xs",
           aspect: "1:1",
         });
-      else imageUrl = "./images/avatar.png";
+      }
+      else if (otherUsers) {
+        imageUrl = "./images/people_alt.svg";
+      }
+      else {
+        imageUrl = "./images/avatar.png";
+      }
+      
       let element = document.createElement("div");
-  
       let time = new Date(thread.lastMessage.createdAt);
   
       if (isToday(time)) {
@@ -42,35 +62,65 @@ function reloadMessages(threads, clearOldThreads) {
   
       const lastMessageText = time + unescape(thread.lastMessage.text);
   
-      const redDotVisible = 
-        thread.lastMessage.sender === otherUser._id && !thread.lastMessage.isRead;
+      const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
+
+        if (otherUsers) {
+          thread_template = thread_template.replace(
+            "{{displayName}}",
+            otherUsers
+              .map((u) => {
+                return u.displayName
+                  ? u.displayName
+                  : u.firstName && u.lastName
+                  ? `${u.firstName} ${u.lastName}`
+                  : u.firstName
+                  ? u.firstName
+                  : u.lastName
+                  ? u.lastName
+                  : "Someone";
+              })
+              .join(", ")
+          );
+        } else {
+          thread_template = thread_template.replace("{{displayName}}", otherUser.displayName ? otherUser.displayName : otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ? otherUser.firstName : otherUser.lastName ? otherUser.lastName : "Someone")
+        }
 
         element.innerHTML = thread_template
-        .replace("{{displayName}}", otherUser.displayName ? otherUser.displayName : otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ? otherUser.firstName : otherUser.lastName ? otherUser.lastName : "Someone")
         .replace("{{imageUrl}}", imageUrl)
         .replace("{{lastMessage}}", lastMessageText)
         .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
-  
+
       element.onclick = () => {
         if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
   
-        buildfire.navigation.navigateTo({
+        let navigationParams = {
           pluginId: thread.navigationData.pluginId,
           instanceId: thread.navigationData.instanceId,
           folderName: thread.navigationData.folderName,
           title: thread.wallTitle,
-          queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle,
-        });
+          queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle
+        }
+
+        if (otherUsers) {
+          navigationParams.queryString += `&userIds=${ otherUsers.map(u => u._id) }`;
+        }
+
+        buildfire.navigation.navigateTo(navigationParams);
       };
+
       elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
 
       // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
 
       // if(elementsToAppend.length==threads.length){
-        elementsToAppend=elementsToAppend.sort((a, b)=>{return new Date(b.time)-new Date(a.time);});
-        elementsToAppend.forEach(toDiv=>{
-          inboxMessages.appendChild(toDiv.obj);
-        })
+      elementsToAppend = elementsToAppend.sort((a, b) => { return new Date(b.time) - new Date(a.time); });
+      elementsToAppend.forEach(toDiv => {
+        inboxMessages.appendChild(toDiv.obj);
+      });
+
+      if (otherUsers) {
+        element.querySelector('img.profile-image').style.backgroundColor = '#9696961A';
+      }
       // }
     });
   });
