@@ -19,6 +19,7 @@ class Thread {
       instanceId: undefined,
       folderName: undefined
     };
+    this.isSupportThread = record.data.isSupportThread || undefined;
     this.lastMessage = record.data.lastMessage || {
       text: undefined,
       createdAt: undefined,
@@ -46,6 +47,7 @@ class Thread {
       wallTitle: this.wallTitle,
       lastMessage: this.lastMessage,
       navigationData: this.navigationData,
+      isSupportThread: this.isSupportThread,
       _buildfire: {
         index: {
           number1: this.isActive ? 1 : 0,
