@@ -1,7 +1,7 @@
 {
   "author": "BuildFire",
   "pluginName": "Inbox",
-  "pluginDescription": "Inbox for premium social wall one on one threads",
+  "pluginDescription": "Enhance app communication and improve interactions",
   "supportEmail": "support@buildfire.com",
   "control": {
     "content": {
@@ -18,5 +18,27 @@
   "widget": {},
   "features": [],
   "webpack": "8080",
-  "languages": ["en"]
+  "languages": ["en"],
+  "media": [
+    {
+      "type": "image-resource",
+      "path": "1-Plugin.png"
+    },
+    {
+      "type": "image-resource",
+      "path": "2-Benefits.png"
+    },
+    {
+      "type": "image-resource",
+      "path": "3-Use-Cases.png"
+    },
+    {
+      "type": "image-resource",
+      "path": "4-Analytics-Tab.png"
+    },
+    {
+      "type": "youtube-video",
+      "path": "https://www.youtube.com/watch?v=MacJmxSWqyw"
+    }
+  ]
 }
