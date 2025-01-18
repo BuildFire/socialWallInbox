@@ -1,7 +1,7 @@
 {
   "author": "Buildfire",
   "pluginName": "Inbox",
-  "pluginDescription": "Enhance app communication and improve interactions",
+  "pluginDescription": "Enhance app communication and improve user interactions with the Inbox plugin, providing a seamless messaging system for efficient, organized conversations within your app.",
   "supportEmail": "support@buildfire.com",
   "control": {
     "content": {
