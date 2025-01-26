@@ -127,14 +127,36 @@ function reloadMessages(threads, clearOldThreads) {
   });
 }
 
-function prepareCommunityWallTitleBar(users) {
-  return users.map(user => {
-    if (user.displayName) return user.displayName;
-    const firstName = user.firstName || '';
-    const lastName = user.lastName || '';
-    return `${firstName} ${lastName}`.trim();
-  }).join(' | ');
+function prepareCommunityWallTitleBar(usersDetails) {
+  const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+  function getUserName(userDetails) {
+    let name = null;
+    if (userDetails && userDetails.displayName !== 'Someone' && !re.test(String(userDetails.displayName).toLowerCase()) &&
+      userDetails.displayName) {
+      name = userDetails.displayName;
+    } else if (userDetails && userDetails.firstName !== 'Someone' && !re.test(String(userDetails.firstName).toLowerCase()) &&
+      userDetails.firstName && userDetails.lastName) {
+      name = userDetails.firstName + ' ' + userDetails.lastName;
+    } else if (userDetails && userDetails.firstName !== 'Someone' && !re.test(String(userDetails.firstName).toLowerCase()) &&
+      userDetails.firstName) {
+      name = userDetails.firstName;
+    } else if (userDetails && userDetails.lastName !== 'Someone' && !re.test(String(userDetails.lastName).toLowerCase()) &&
+      userDetails.lastName) {
+      name = userDetails.lastName;
+    } else {
+      name = 'Someone';
+    }
+    if (name.length > 25) {
+      name = name.substring(0, 25) + '...';
+    }
+    return name;
+  }
+
+  const userNames = usersDetails.map(user => getUserName(user));
+  return userNames.join(' | ');
 }
+
 function initWidget(user) {
   loggedInUser = user;
   Threads.getThreads(user, 0, 20, (err, threads) => {
