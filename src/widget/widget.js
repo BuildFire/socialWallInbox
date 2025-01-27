@@ -28,7 +28,7 @@ function reloadMessages(threads, clearOldThreads) {
 
     buildfire.auth.getUserProfiles({ userIds }, (err, users)=> {
       if(err || !users.length) return console.error('User not found.');
-      
+
       let otherUser, otherUsers;
 
       if (thread.isSupportThread) {
@@ -36,7 +36,7 @@ function reloadMessages(threads, clearOldThreads) {
       } else {
         otherUser = users[0];
       }
-      
+
       let imageUrl;
       if (otherUser && otherUser.imageUrl) {
         imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
@@ -50,18 +50,18 @@ function reloadMessages(threads, clearOldThreads) {
       else {
         imageUrl = "./images/avatar.png";
       }
-      
+
       let element = document.createElement("div");
       let time = new Date(thread.lastMessage.createdAt);
-  
+
       if (isToday(time)) {
         time = time.toLocaleTimeString().slice(0, 5) + " - ";
       } else {
         time = time.toDateString().slice(4, 10) + " - ";
       }
-  
+
       const lastMessageText = time + unescape(thread.lastMessage.text);
-  
+
       const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
 
         if (otherUsers) {
@@ -92,13 +92,14 @@ function reloadMessages(threads, clearOldThreads) {
 
       element.onclick = () => {
         if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-  
+        const wallTitle = thread.wallTitle || prepareCommunityWallTitleBar(thread.users);
+
         let navigationParams = {
           pluginId: thread.navigationData.pluginId,
           instanceId: thread.navigationData.instanceId,
           folderName: thread.navigationData.folderName,
-          title: thread.wallTitle,
-          queryString: "wid=" + thread.wallId + "&wTitle=" + thread.wallTitle
+          title: wallTitle,
+          queryString: "wid=" + thread.wallId + "&wTitle=" + wallTitle
         }
 
         if (otherUsers) {
@@ -124,6 +125,36 @@ function reloadMessages(threads, clearOldThreads) {
       // }
     });
   });
+}
+
+function prepareCommunityWallTitleBar(usersDetails) {
+  const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+  function getUserName(userDetails) {
+    let name = null;
+    if (userDetails && userDetails.displayName !== 'Someone' && !re.test(String(userDetails.displayName).toLowerCase()) &&
+      userDetails.displayName) {
+      name = userDetails.displayName;
+    } else if (userDetails && userDetails.firstName !== 'Someone' && !re.test(String(userDetails.firstName).toLowerCase()) &&
+      userDetails.firstName && userDetails.lastName) {
+      name = userDetails.firstName + ' ' + userDetails.lastName;
+    } else if (userDetails && userDetails.firstName !== 'Someone' && !re.test(String(userDetails.firstName).toLowerCase()) &&
+      userDetails.firstName) {
+      name = userDetails.firstName;
+    } else if (userDetails && userDetails.lastName !== 'Someone' && !re.test(String(userDetails.lastName).toLowerCase()) &&
+      userDetails.lastName) {
+      name = userDetails.lastName;
+    } else {
+      name = 'Someone';
+    }
+    if (name.length > 25) {
+      name = name.substring(0, 25) + '...';
+    }
+    return name;
+  }
+
+  const userNames = usersDetails.map(user => getUserName(user));
+  return userNames.join(' | ');
 }
 
 function initWidget(user) {
@@ -192,7 +223,7 @@ function injectThemeStyle() {
       .search-input { color: ${colors.bodyText} !important; }
     `;
     document.getElementsByTagName("head")[0].appendChild(style);
-    
+
   });
 }
 
