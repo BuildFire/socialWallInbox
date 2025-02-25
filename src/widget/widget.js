@@ -8,8 +8,7 @@ let skip = 0;
 
 let loggedInUser = {};
 
-function reloadMessages(threads, clearOldThreads) {
-  
+async function reloadMessages(threads, clearOldThreads) {
   if (threads.length === 0) {
     showEmptyState();
   } else {
@@ -18,41 +17,86 @@ function reloadMessages(threads, clearOldThreads) {
   const inboxMessages = document.getElementById("inboxMessages");
   if (clearOldThreads) inboxMessages.innerHTML = "";
   let elementsToAppend = [];
-  threads.forEach((thread) => {
-    let thread_template = document.getElementById("thread-ui-template").innerHTML;
-    let userIds;
-
-    if (!thread.isSupportThread) {
-      userIds = thread.users.filter(u => u._id !== loggedInUser._id).map(u => u._id);
-    } else {
-      userIds = thread.users.map(u => u._id);
+  let allUserIds = new Set();
+  
+  threads.forEach(thread => {
+    let userIds = thread.isSupportThread
+            ? thread.users.map(u => u._id)
+            : thread.users.map(u => u._id)
+    
+    userIds.forEach(id => allUserIds.add(id));
+  });
+  
+  const userIdsArray = [...allUserIds];
+  
+  let userMap = {};
+  if (userIdsArray.length > 0) {
+    try {
+      const users = await getUserProfiles(userIdsArray);
+      userMap = users.reduce((map, user) => {
+        if (user) map[user._id] = user;
+        return map;
+      }, {});
+    } catch (error) {
+      console.error("Error fetching user profiles:", error);
     }
-
-    buildfire.auth.getUserProfiles({ userIds }, (err, users)=> {
-      if(err || !users.length) return console.error('User not found.');
-
-      let otherUser, otherUsers;
-
-      if (thread.isSupportThread) {
-        otherUsers = users;
-      } else {
-        otherUser = users[0];
+  }
+  
+  threads.forEach(thread => {
+    thread.users.forEach(user => {
+      if (userMap[user._id]) {
+        user.userDetails = userMap[user._id]; // Assigning userDetails directly
       }
-
-      let imageUrl;
-      if (otherUser && otherUser.imageUrl) {
-        imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
-          size: "xs",
-          aspect: "1:1",
-        });
+    });
+  });
+  
+  threads.forEach(thread => {
+    let otherUser = null;
+    let otherUsers = null;
+    
+    if (thread.isSupportThread) {
+      otherUsers = thread.users.map(u => userMap[u._id]).filter(Boolean);
+    } else {
+      // One-on-one chat: Get the single other user
+      let filteredUsers = thread.users.filter(u => u._id !== loggedInUser._id);
+      if (filteredUsers.length > 0) {
+        otherUser = userMap[filteredUsers[0]._id] || null;
       }
-      else if (otherUsers) {
-        imageUrl = "./images/people_alt.svg";
-      }
-      else {
-        imageUrl = "./images/avatar.png";
-      }
-
+    }
+    if (!otherUser && !otherUsers) {
+      return;
+    }
+    
+    let imageUrl;
+    let displayName;
+    
+    if (thread.isSupportThread && otherUsers.length) {
+      imageUrl = "./images/people_alt.svg";
+      displayName = otherUsers
+              .map(user => user.displayName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Someone")
+              .join(", ");
+    } else if (otherUser) {
+      imageUrl = otherUser.imageUrl
+              ? buildfire.imageLib.cropImage(otherUser.imageUrl, { size: "xs", aspect: "1:1" })
+              : "./images/avatar.png";
+      
+      displayName = otherUsers
+              .map((u) => {
+                return u.displayName
+                ? u.displayName
+                : u.firstName && u.lastName
+                ? `${u.firstName} ${u.lastName}`
+                : u.firstName
+                ? u.firstName
+                : u.lastName
+                ? u.lastName
+                : "Someone";
+              })
+              .join(", ")
+    );
+    }
+    
+      let thread_template = document.getElementById("thread-ui-template").innerHTML;
       let element = document.createElement("div");
       let time = new Date(thread.lastMessage.createdAt);
 
@@ -66,35 +110,16 @@ function reloadMessages(threads, clearOldThreads) {
 
       const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
 
-        if (otherUsers) {
-          thread_template = thread_template.replace(
-            "{{displayName}}",
-            otherUsers
-              .map((u) => {
-                return u.displayName
-                  ? u.displayName
-                  : u.firstName && u.lastName
-                  ? `${u.firstName} ${u.lastName}`
-                  : u.firstName
-                  ? u.firstName
-                  : u.lastName
-                  ? u.lastName
-                  : "Someone";
-              })
-              .join(", ")
-          );
-        } else {
-          thread_template = thread_template.replace("{{displayName}}", otherUser.displayName ? otherUser.displayName : otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ? otherUser.firstName : otherUser.lastName ? otherUser.lastName : "Someone")
-        }
-
-        element.innerHTML = thread_template
+      thread_template = thread_template
+        .replace("{{displayName}}", displayName)
         .replace("{{imageUrl}}", imageUrl)
         .replace("{{lastMessage}}", lastMessageText)
         .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+      element.innerHTML = thread_template;
 
       element.onclick = () => {
         if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-        const wallTitle = thread.wallTitle || prepareCommunityWallTitleBar(thread.users);
+        const wallTitle = prepareCommunityWallTitleBar(thread.users);
 
         let navigationParams = {
           pluginId: thread.navigationData.pluginId,
@@ -111,20 +136,23 @@ function reloadMessages(threads, clearOldThreads) {
         buildfire.navigation.navigateTo(navigationParams);
       };
 
-      elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
-
-      // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
-
-      // if(elementsToAppend.length==threads.length){
+    elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
+  });
+  // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
+  
+  // if(elementsToAppend.length==threads.length){
       elementsToAppend = elementsToAppend.sort((a, b) => { return new Date(b.time) - new Date(a.time); });
       elementsToAppend.forEach(toDiv => {
         inboxMessages.appendChild(toDiv.obj);
       });
+}
 
-      if (otherUsers) {
-        element.querySelector('img.profile-image').style.backgroundColor = '#9696961A';
-      }
-      // }
+// Fetches user profiles using Promises
+async function getUserProfiles(userIds) {
+  return new Promise((resolve, reject) => {
+    buildfire.auth.getUserProfiles({ userIds }, (err, users) => {
+      if (err) return reject(err);
+      resolve(users);
     });
   });
 }
@@ -155,14 +183,14 @@ function prepareCommunityWallTitleBar(usersDetails) {
     return name;
   }
 
-  const userNames = usersDetails.map(user => getUserName(user));
+  const userNames = usersDetails.map(user => getUserName(user.userDetails));
   return userNames.join(' | ');
 }
 
 function initWidget(user) {
   loggedInUser = user;
-  Threads.getThreads(user, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
+  Threads.getThreads(user, 0, 20, async (err, threads) => {
+    await reloadMessages(threads, true);
   });
 
   let form = document.getElementById("searchForm");
@@ -175,9 +203,11 @@ function initWidget(user) {
       if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1){
         loading = true;
         skip += 20;
-        Threads.getThreads(user, skip, 20, (err, threads) => {
+        toggleLoading();
+        Threads.getThreads(user, document.getElementById("inboxMessages").childNodes.length, 20, async(err, threads) => {
           if(threads.length < 20) getMoreThreads = false;
-          reloadMessages(threads, false);
+          await reloadMessages(threads, false);
+          toggleLoading();
           loading = false;
         });
       }
@@ -191,19 +221,24 @@ function onSearch(e) {
   skip = 0;
   let keyword = document.getElementById("searchInput").value;
   if (keyword.length === 0) return initWidget(loggedInUser);
-  Threads.search(loggedInUser, keyword, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
+  Threads.search(loggedInUser, keyword, 0, 20, async (err, threads) => {
+    await reloadMessages(threads, true);
   });
+}
+
+function toggleLoading() {
+    let loading = document.getElementById("loading");
+     loading.style.display = loading.style.display === "flex" ? "none" : "flex";
 }
 
 function showEmptyState() {
   let emptyState = document.getElementById("emptyState");
-  emptyState.style.visibility = "visible";
+  emptyState.style.display = "flex";
 }
 
 function hideEmptyState() {
   let emptyState = document.getElementById("emptyState");
-  emptyState.style.visibility = "hidden";
+  emptyState.style.display = "none";
 }
 
 function isToday(someDate) {
