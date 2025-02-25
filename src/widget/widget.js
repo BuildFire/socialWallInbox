@@ -79,74 +79,49 @@ async function reloadMessages(threads, clearOldThreads) {
               ? buildfire.imageLib.cropImage(otherUser.imageUrl, { size: "xs", aspect: "1:1" })
               : "./images/avatar.png";
       
-      displayName = otherUsers
-              .map((u) => {
-                return u.displayName
-                ? u.displayName
-                : u.firstName && u.lastName
-                ? `${u.firstName} ${u.lastName}`
-                : u.firstName
-                ? u.firstName
-                : u.lastName
-                ? u.lastName
-                : "Someone";
-              })
-              .join(", ")
-    );
+      displayName = otherUser.displayName ||
+              `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() ||
+              "Someone";
     }
     
-      let thread_template = document.getElementById("thread-ui-template").innerHTML;
-      let element = document.createElement("div");
-      let time = new Date(thread.lastMessage.createdAt);
-
-      if (isToday(time)) {
-        time = time.toLocaleTimeString().slice(0, 5) + " - ";
-      } else {
-        time = time.toDateString().slice(4, 10) + " - ";
-      }
-
-      const lastMessageText = time + unescape(thread.lastMessage.text);
-
-      const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
-
-      thread_template = thread_template
-        .replace("{{displayName}}", displayName)
-        .replace("{{imageUrl}}", imageUrl)
-        .replace("{{lastMessage}}", lastMessageText)
-        .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
-      element.innerHTML = thread_template;
-
-      element.onclick = () => {
-        if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-        const wallTitle = prepareCommunityWallTitleBar(thread.users);
-
-        let navigationParams = {
-          pluginId: thread.navigationData.pluginId,
-          instanceId: thread.navigationData.instanceId,
-          folderName: thread.navigationData.folderName,
-          title: wallTitle,
-          queryString: "wid=" + thread.wallId + "&wTitle=" + wallTitle
-        }
-
-        if (otherUsers) {
-          navigationParams.queryString += `&userIds=${ otherUsers.map(u => u._id) }`;
-        }
-
-        buildfire.navigation.navigateTo(navigationParams);
+    let thread_template = document.getElementById("thread-ui-template").innerHTML;
+    let element = document.createElement("div");
+    
+    let time = new Date(thread.lastMessage.createdAt);
+    time = isToday(time) ? time.toLocaleTimeString().slice(0, 5) + " - " : time.toDateString().slice(4, 10) + " - ";
+    
+    const lastMessageText = time + unescape(thread.lastMessage.text);
+    const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
+    
+    thread_template = thread_template
+            .replace("{{displayName}}", displayName)
+            .replace("{{imageUrl}}", imageUrl)
+            .replace("{{lastMessage}}", lastMessageText)
+            .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+    element.innerHTML = thread_template;
+    
+    element.onclick = () => {
+      if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
+      let navigationParams = {
+        pluginId: thread.navigationData.pluginId,
+        instanceId: thread.navigationData.instanceId,
+        folderName: thread.navigationData.folderName,
+        queryString: `wid=${thread.wallId}`
       };
-
-    elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
+      if (otherUsers) {
+        navigationParams.queryString += `&userIds=${otherUsers.map(u => u._id).join(",")}`;
+      }
+      
+      buildfire.navigation.navigateTo(navigationParams);
+    };
+    
+    elementsToAppend.push({ time: thread.lastMessage.createdAt, obj: element });
   });
-  // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
   
-  // if(elementsToAppend.length==threads.length){
-      elementsToAppend = elementsToAppend.sort((a, b) => { return new Date(b.time) - new Date(a.time); });
-      elementsToAppend.forEach(toDiv => {
-        inboxMessages.appendChild(toDiv.obj);
-      });
+  elementsToAppend.sort((a, b) => new Date(b.time) - new Date(a.time));
+  elementsToAppend.forEach(toDiv => inboxMessages.appendChild(toDiv.obj));
 }
 
-// Fetches user profiles using Promises
 async function getUserProfiles(userIds) {
   return new Promise((resolve, reject) => {
     buildfire.auth.getUserProfiles({ userIds }, (err, users) => {
