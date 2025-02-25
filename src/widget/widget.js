@@ -100,17 +100,22 @@ async function reloadMessages(threads, clearOldThreads) {
             .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
     element.innerHTML = thread_template;
     
+    console.log("CLICKED")
     element.onclick = () => {
+      console.log("CLICKED ,ss")
+      const wallTitle = prepareCommunityWallTitleBar(thread.users) || thread.wallTitle;
       if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
       let navigationParams = {
         pluginId: thread.navigationData.pluginId,
         instanceId: thread.navigationData.instanceId,
         folderName: thread.navigationData.folderName,
-        queryString: `wid=${thread.wallId}`
+        queryString: `wid=${thread.wallId}`,
+        title: wallTitle,
       };
       if (otherUsers) {
         navigationParams.queryString += `&userIds=${otherUsers.map(u => u._id).join(",")}`;
       }
+ 
       
       buildfire.navigation.navigateTo(navigationParams);
     };
