@@ -4,7 +4,6 @@ import authManager from "../dataAccess/authManager";
 authManager.onUserChange = initWidget;
 
 authManager.enforceLogin();
-let skip = 0;
 
 let loggedInUser = {};
 
@@ -202,7 +201,6 @@ function initWidget(user) {
     if(getMoreThreads && !loading){
       if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1){
         loading = true;
-        skip += 20;
         toggleLoading();
         Threads.getThreads(user, document.getElementById("inboxMessages").childNodes.length, 20, async(err, threads) => {
           if(threads.length < 20) getMoreThreads = false;
@@ -218,7 +216,6 @@ function initWidget(user) {
 
 function onSearch(e) {
   e.preventDefault();
-  skip = 0;
   let keyword = document.getElementById("searchInput").value;
   if (keyword.length === 0) return initWidget(loggedInUser);
   Threads.search(loggedInUser, keyword, 0, 20, async (err, threads) => {
