@@ -86,7 +86,6 @@ function getThreadDisplayData(thread, otherUser, otherUsers) {
                 : "Someone";
               })
               .join(", ")
-  );
     };
   }
   
