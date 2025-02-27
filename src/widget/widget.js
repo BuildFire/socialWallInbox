@@ -9,122 +9,148 @@ let loggedInUser = {};
 
 async function reloadMessages(threads, clearOldThreads) {
   if (threads.length === 0) {
-    showEmptyState();
-  } else {
+    showEmptyState()
+  }
+  else {
     hideEmptyState();
   }
+  
   const inboxMessages = document.getElementById("inboxMessages");
   if (clearOldThreads) inboxMessages.innerHTML = "";
-  let elementsToAppend = [];
-  let allUserIds = new Set();
   
-  threads.forEach(thread => {
-    let userIds = thread.isSupportThread
-            ? thread.users.map(u => u._id)
-            : thread.users.map(u => u._id)
-    
-    userIds.forEach(id => allUserIds.add(id));
-  });
+  const userProfilesMap = await fetchUserProfiles(threads);
+  const elementsToAppend = threads.map(thread => createThreadElement(thread, userProfilesMap)).filter(Boolean);
   
-  const userIdsArray = [...allUserIds];
+  appendSortedThreads(elementsToAppend, inboxMessages);
+}
+async function fetchUserProfiles(threads) {
+  const uniqueUserIds = new Set();
+  threads.forEach(thread => thread.users.forEach(user => uniqueUserIds.add(user._id)));
   
-  let userMap = {};
-  if (userIdsArray.length > 0) {
-    try {
-      const users = await getUserProfiles(userIdsArray);
-      userMap = users.reduce((map, user) => {
-        if (user) map[user._id] = user;
-        return map;
-      }, {});
-    } catch (error) {
-      console.error("Error fetching user profiles:", error);
-    }
+  if (uniqueUserIds.size === 0) return {};
+  
+  try {
+    const users = await getUserProfiles([...uniqueUserIds]);
+    return users.reduce((map, user) => {
+      if (user) map[user._id] = user;
+      return map;
+    }, {});
+  } catch (error) {
+    console.error("Error fetching user profiles:", error);
+    return {};
+  }
+}
+
+function createThreadElement(thread, userProfilesMap) {
+  thread.users.forEach(user => user.userDetails = userProfilesMap[user._id] || user);
+  
+  const { otherUser, otherUsers } = getThreadParticipants(thread, userProfilesMap);
+  if (!otherUser && !otherUsers) return null;
+  
+  const { imageUrl, displayName } = getThreadDisplayData(thread, otherUser, otherUsers);
+  const lastMessageText = formatLastMessage(thread.lastMessage);
+  const redDotVisible = shouldShowUnreadIndicator(thread.lastMessage);
+  
+  return {
+    time: thread.lastMessage.createdAt,
+    obj: createThreadHTML(thread, displayName, imageUrl, lastMessageText, redDotVisible, otherUsers),
+  };
+}
+function getThreadParticipants(thread, userProfilesMap) {
+  if (thread.isSupportThread) {
+    return {
+      otherUsers: thread.users.map(u => userProfilesMap[u._id]).filter(Boolean),
+    };
   }
   
-  threads.forEach(thread => {
-    thread.users.forEach(user => {
-      if (userMap[user._id]) {
-        user.userDetails = userMap[user._id]; // Assigning userDetails directly
-      }
-    });
-  });
-  
-  threads.forEach(thread => {
-    let otherUser = null;
-    let otherUsers = null;
-    
-    if (thread.isSupportThread) {
-      otherUsers = thread.users.map(u => userMap[u._id]).filter(Boolean);
-    } else {
-      // One-on-one chat: Get the single other user
-      let filteredUsers = thread.users.filter(u => u._id !== loggedInUser._id);
-      if (filteredUsers.length > 0) {
-        otherUser = userMap[filteredUsers[0]._id] || null;
-      }
-    }
-    if (!otherUser && !otherUsers) {
-      return;
-    }
-    
-    let imageUrl;
-    let displayName;
-    
-    if (thread.isSupportThread && otherUsers.length) {
-      imageUrl = "./images/people_alt.svg";
-      displayName = otherUsers
-              .map(user => user.displayName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Someone")
-              .join(", ");
-    } else if (otherUser) {
-      imageUrl = otherUser.imageUrl
-              ? buildfire.imageLib.cropImage(otherUser.imageUrl, { size: "xs", aspect: "1:1" })
-              : "./images/avatar.png";
-      
-      displayName = otherUser.displayName ||
-              `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() ||
-              "Someone";
-    }
-    
-    let thread_template = document.getElementById("thread-ui-template").innerHTML;
-    let element = document.createElement("div");
-    
-    let time = new Date(thread.lastMessage.createdAt);
-    time = isToday(time) ? time.toLocaleTimeString().slice(0, 5) + " - " : time.toDateString().slice(4, 10) + " - ";
-    
-    const lastMessageText = time + unescape(thread.lastMessage.text);
-    const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
-    
-    thread_template = thread_template
-            .replace("{{displayName}}", displayName)
-            .replace("{{imageUrl}}", imageUrl)
-            .replace("{{lastMessage}}", lastMessageText)
-            .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
-    element.innerHTML = thread_template;
-    
-    console.log("CLICKED")
-    element.onclick = () => {
-      console.log("CLICKED ,ss")
-      const wallTitle = prepareCommunityWallTitleBar(thread.users) || thread.wallTitle;
-      if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-      let navigationParams = {
-        pluginId: thread.navigationData.pluginId,
-        instanceId: thread.navigationData.instanceId,
-        folderName: thread.navigationData.folderName,
-        queryString: `wid=${thread.wallId}`,
-        title: wallTitle,
-      };
-      if (otherUsers) {
-        navigationParams.queryString += `&userIds=${otherUsers.map(u => u._id).join(",")}`;
-      }
- 
-      
-      buildfire.navigation.navigateTo(navigationParams);
+  const recipient = thread.users.find(u => u._id !== loggedInUser._id);
+  return {
+    otherUser: recipient ? userProfilesMap[recipient._id] || null : null,
+  };
+}
+
+function getThreadDisplayData(thread, otherUser, otherUsers) {
+  if (thread.isSupportThread && otherUsers.length) {
+    return {
+      imageUrl: "./images/people_alt.svg",
+      displayName: otherUsers
+              .map((user) => {
+                return user.displayName
+                ? user.displayName
+                : user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.firstName
+                ? user.firstName
+                : user.lastName
+                ? user.lastName
+                : "Someone";
+              })
+              .join(", ")
+  );
     };
-    
-    elementsToAppend.push({ time: thread.lastMessage.createdAt, obj: element });
-  });
+  }
   
-  elementsToAppend.sort((a, b) => new Date(b.time) - new Date(a.time));
-  elementsToAppend.forEach(toDiv => inboxMessages.appendChild(toDiv.obj));
+  return {
+    imageUrl: (otherUser && otherUser.imageUrl)
+            ? buildfire.imageLib.cropImage(otherUser.imageUrl, { size: "xs", aspect: "1:1" })
+            : "./images/avatar.png",
+    displayName: otherUser.displayName
+            ? otherUser.displayName : otherUser.firstName && otherUser.lastName ?
+            `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ?
+             otherUser.firstName : otherUser.lastName ?
+             otherUser.lastName : "Someone",
+    
+  };
+}
+
+function formatLastMessage(lastMessage) {
+  const time = new Date(lastMessage.createdAt);
+  const formattedTime = isToday(time) ? time.toLocaleTimeString().slice(0, 5) + " - " : time.toDateString().slice(4, 10) + " - ";
+  return formattedTime + unescape(lastMessage.text);
+}
+
+function shouldShowUnreadIndicator(lastMessage) {
+  return lastMessage.sender !== loggedInUser._id && lastMessage && !lastMessage.isRead;
+}
+
+function createThreadHTML(thread, displayName, imageUrl, lastMessageText, redDotVisible, otherUsers) {
+  let template = document.getElementById("thread-ui-template").innerHTML;
+  template = template
+          .replace("{{displayName}}", displayName)
+          .replace("{{imageUrl}}", imageUrl)
+          .replace("{{lastMessage}}", lastMessageText)
+          .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+  
+  const element = document.createElement("div");
+  element.innerHTML = template;
+  element.onclick = () => handleThreadClick(thread, redDotVisible, otherUsers);
+  
+  return element;
+}
+
+function handleThreadClick(thread, redDotVisible, otherUsers) {
+  
+  const wallTitle = prepareCommunityWallTitleBar(thread.users) || thread.wallTitle;
+  if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
+  
+  let navigationParams = {
+    pluginId: thread.navigationData.pluginId,
+    instanceId: thread.navigationData.instanceId,
+    folderName: thread.navigationData.folderName,
+    queryString: `wid=${thread.wallId}`,
+    title: wallTitle,
+  };
+  
+  if (otherUsers && otherUsers.length) {
+    navigationParams.queryString += `&userIds=${otherUsers.map(u => u._id).join(",")}`;
+  }
+  
+  buildfire.navigation.navigateTo(navigationParams);
+}
+
+function appendSortedThreads(elements, inboxMessages) {
+  elements.sort((a, b) => new Date(b.time) - new Date(a.time));
+  elements.forEach(({ obj }) => inboxMessages.appendChild(obj));
 }
 
 async function getUserProfiles(userIds) {
