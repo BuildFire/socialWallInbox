@@ -24,13 +24,13 @@ async function reloadMessages(threads, clearOldThreads) {
   appendSortedThreads(elementsToAppend, inboxMessages);
 }
 async function fetchUserProfiles(threads) {
-  const uniqueUserIds = new Set();
-  threads.forEach(thread => thread.users.forEach(user => uniqueUserIds.add(user._id)));
+  const threadsParticipants = new Set();
+  threads.forEach(thread => thread.users.forEach(user => threadsParticipants.add(user._id)));
   
-  if (uniqueUserIds.size === 0) return {};
+  if (threadsParticipants.size === 0) return {};
   
   try {
-    const users = await getUserProfiles([...uniqueUserIds]);
+    const users = await getUserProfiles([...threadsParticipants]);
     return users.reduce((map, user) => {
       if (user) map[user._id] = user;
       return map;
