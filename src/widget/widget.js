@@ -6,9 +6,13 @@ authManager.onUserChange = initWidget;
 authManager.enforceLogin();
 
 let loggedInUser = {};
+let userMap = {};
+let skip = 0;
+let allThreads = [];
 
 async function reloadMessages(threads, clearOldThreads) {
-  if (threads.length === 0) {
+  allThreads = clearOldThreads ? threads : allThreads.concat(threads);
+  if (threads.length === 0 && allThreads.length === 0) {
     showEmptyState()
   }
   else {
@@ -23,21 +27,26 @@ async function reloadMessages(threads, clearOldThreads) {
   
   appendSortedThreads(elementsToAppend, inboxMessages);
 }
+
 async function fetchUserProfiles(threads) {
   const threadsParticipants = new Set();
-  threads.forEach(thread => thread.users.forEach(user => threadsParticipants.add(user._id)));
+  threads.forEach(thread => thread.users.forEach(user => {
+    if (!userMap[user._id]) {
+      threadsParticipants.add(user._id);
+    }
+  }));
   
-  if (threadsParticipants.size === 0) return {};
+  if (threadsParticipants.size === 0) return userMap;
   
   try {
     const users = await getUserProfiles([...threadsParticipants]);
-    return users.reduce((map, user) => {
-      if (user) map[user._id] = user;
-      return map;
-    }, {});
+    users.forEach(user => {
+      if (user) userMap[user._id] = user;
+    });
+    return userMap;
   } catch (error) {
     console.error("Error fetching user profiles:", error);
-    return {};
+    return userMap;
   }
 }
 
@@ -204,10 +213,11 @@ function initWidget(user) {
   let inboxMessages = document.getElementById("inboxMessages");
   inboxMessages.onscroll = () =>{
     if(getMoreThreads && !loading){
-      if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1){
+      if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1) {
         loading = true;
         toggleLoading();
-        Threads.getThreads(user, document.getElementById("inboxMessages").childNodes.length, 20, async(err, threads) => {
+        skip +=20;
+        Threads.getThreads(user, skip, 20, async(err, threads) => {
           if(threads.length < 20) getMoreThreads = false;
           await reloadMessages(threads, false);
           toggleLoading();
@@ -220,6 +230,7 @@ function initWidget(user) {
 }
 
 function onSearch(e) {
+  skip = 0;
   e.preventDefault();
   let keyword = document.getElementById("searchInput").value;
   if (keyword.length === 0) return initWidget(loggedInUser);
