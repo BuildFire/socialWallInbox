@@ -9,6 +9,7 @@ let loggedInUser = {};
 let userMap = {};
 let skip = 0;
 let allThreads = [];
+let searchValue = '';
 
 async function reloadMessages(threads, clearOldThreads) {
   allThreads = clearOldThreads ? threads : allThreads.concat(threads);
@@ -217,7 +218,7 @@ function initWidget(user) {
         loading = true;
         toggleLoading();
         skip +=20;
-        Threads.getThreads(user, skip, 20, async(err, threads) => {
+        Threads.search(user, searchValue, skip, 20, async(err, threads) => {
           if(threads.length < 20) getMoreThreads = false;
           await reloadMessages(threads, false);
           toggleLoading();
@@ -232,9 +233,9 @@ function initWidget(user) {
 function onSearch(e) {
   skip = 0;
   e.preventDefault();
-  let keyword = document.getElementById("searchInput").value;
-  if (keyword.length === 0) return initWidget(loggedInUser);
-  Threads.search(loggedInUser, keyword, 0, 20, async (err, threads) => {
+  searchValue = document.getElementById("searchInput").value;
+  if (searchValue.length === 0) return initWidget(loggedInUser);
+  Threads.search(loggedInUser, searchValue, 0, 20, async (err, threads) => {
     await reloadMessages(threads, true);
   });
 }
