@@ -234,7 +234,7 @@ function onSearch(e) {
   skip = 0;
   e.preventDefault();
   searchValue = document.getElementById("searchInput").value;
-  if (searchValue.length === 0) return initWidget(loggedInUser);
+  if (!searchValue.trim()) return initWidget(loggedInUser);
   Threads.search(loggedInUser, searchValue, 0, 20, async (err, threads) => {
     await reloadMessages(threads, true);
   });
