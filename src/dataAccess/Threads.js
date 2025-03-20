@@ -239,6 +239,10 @@ class Threads {
       }
     );
   }
+
+  static deleteThread(threadId, callback) {
+    buildfire.appData.delete(threadId, Threads.TAG, callback);
+  }
 }
 
 export default Threads;

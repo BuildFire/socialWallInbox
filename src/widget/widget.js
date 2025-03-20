@@ -6,9 +6,10 @@ authManager.onUserChange = initWidget;
 authManager.enforceLogin();
 
 let loggedInUser = {};
+const allThreads = [];
 
 function reloadMessages(threads, clearOldThreads) {
-  if (threads.length === 0) {
+  if (threads.length === 0 && allThreads.length === 0) {
     showEmptyState();
   } else {
     hideEmptyState();
@@ -17,6 +18,18 @@ function reloadMessages(threads, clearOldThreads) {
   if (clearOldThreads) inboxMessages.innerHTML = "";
   let elementsToAppend = [];
   threads.forEach((thread) => {
+    const existThread = allThreads.find(existThread => existThread.wallId === thread.wallId);
+    if (existThread) {
+      if (existThread.id !== thread.id) {
+        // delete duplicate thread
+        Threads.deleteThread(thread.id, (err, res) => {
+          if (err) console.error('failed to delete thread ', err);
+        });
+      }
+      return;
+    }
+    allThreads.push(thread);
+
     let thread_template = document.getElementById("thread-ui-template").innerHTML;
     let userIds;
 
