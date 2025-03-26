@@ -9,7 +9,7 @@
     font-style: normal;
     font-display: block;
 }
-  
+
 [class^="icon-"], [class*=" icon-"] {
     /* use !important to prevent issues with browser extensions that change fonts */
     font-family: 'icomoon' !important;
@@ -24,7 +24,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-  
+
 .icon-drawer2:before {
     content: "\e95d";
 }
@@ -34,7 +34,7 @@
 .icon-search:before {
     content: "\e986";
 }
-    
+
 
 body {
     margin: 0;
@@ -74,13 +74,15 @@ body {
     margin-right: 15px;
 }
 
-#emptyState {
-    visibility: hidden;
+#emptyState, #loading {
     flex: 1;
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+}
+#loading {
+    font-weight: bold;
 }
 
 .empty-icon {
@@ -154,4 +156,4 @@ body {
 
     li:before {
         content: none !important;
-    } 
+    }

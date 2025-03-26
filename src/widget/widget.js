@@ -6,123 +6,167 @@ authManager.onUserChange = initWidget;
 authManager.enforceLogin();
 
 let loggedInUser = {};
+let userMap = {};
+let skip = 0;
+let allThreads = [];
+let searchValue = '';
 
-function reloadMessages(threads, clearOldThreads) {
-  if (threads.length === 0) {
-    showEmptyState();
-  } else {
+async function reloadMessages(threads, clearOldThreads) {
+  allThreads = clearOldThreads ? threads : allThreads.concat(threads);
+  if (threads.length === 0 && allThreads.length === 0) {
+    showEmptyState()
+  }
+  else {
     hideEmptyState();
   }
+  
   const inboxMessages = document.getElementById("inboxMessages");
   if (clearOldThreads) inboxMessages.innerHTML = "";
-  let elementsToAppend = [];
-  threads.forEach((thread) => {
-    let thread_template = document.getElementById("thread-ui-template").innerHTML;
-    let userIds;
+  
+  const userProfilesMap = await fetchUserProfiles(threads);
+  const elementsToAppend = threads.map(thread => createThreadElement(thread, userProfilesMap)).filter(Boolean);
+  
+  appendSortedThreads(elementsToAppend, inboxMessages);
+}
 
-    if (!thread.isSupportThread) {
-      userIds = thread.users.filter(u => u._id !== loggedInUser._id).map(u => u._id);
-    } else {
-      userIds = thread.users.map(u => u._id);
+async function fetchUserProfiles(threads) {
+  const threadsParticipants = new Set();
+  threads.forEach(thread => thread.users.forEach(user => {
+    if (!userMap[user._id]) {
+      threadsParticipants.add(user._id);
     }
+  }));
+  
+  if (threadsParticipants.size === 0) return userMap;
+  
+  try {
+    const users = await getUserProfiles([...threadsParticipants]);
+    users.forEach(user => {
+      if (user) userMap[user._id] = user;
+    });
+    return userMap;
+  } catch (error) {
+    console.error("Error fetching user profiles:", error);
+    return userMap;
+  }
+}
 
-    buildfire.auth.getUserProfiles({ userIds }, (err, users)=> {
-      if(err || !users.length) return console.error('User not found.');
+function createThreadElement(thread, userProfilesMap) {
+  thread.users.forEach(user => user.userDetails = userProfilesMap[user._id] || user);
+  
+  const { otherUser, otherUsers } = getThreadParticipants(thread, userProfilesMap);
+  if (!otherUser && !otherUsers) return null;
+  
+  const { imageUrl, displayName } = getThreadDisplayData(thread, otherUser, otherUsers);
+  const lastMessageText = formatLastMessage(thread.lastMessage);
+  const redDotVisible = shouldShowUnreadIndicator(thread.lastMessage);
+  
+  return {
+    time: thread.lastMessage.createdAt,
+    obj: createThreadHTML(thread, displayName, imageUrl, lastMessageText, redDotVisible, otherUsers),
+  };
+}
+function getThreadParticipants(thread, userProfilesMap) {
+  if (thread.isSupportThread) {
+    return {
+      otherUsers: thread.users.map(u => userProfilesMap[u._id]).filter(Boolean),
+    };
+  }
+  
+  const recipient = thread.users.find(u => u._id !== loggedInUser._id);
+  return {
+    otherUser: recipient ? userProfilesMap[recipient._id] || null : null,
+  };
+}
 
-      let otherUser, otherUsers;
-
-      if (thread.isSupportThread) {
-        otherUsers = users;
-      } else {
-        otherUser = users[0];
-      }
-
-      let imageUrl;
-      if (otherUser && otherUser.imageUrl) {
-        imageUrl = buildfire.imageLib.cropImage(otherUser.imageUrl, {
-          size: "xs",
-          aspect: "1:1",
-        });
-      }
-      else if (otherUsers) {
-        imageUrl = "./images/people_alt.svg";
-      }
-      else {
-        imageUrl = "./images/avatar.png";
-      }
-
-      let element = document.createElement("div");
-      let time = new Date(thread.lastMessage.createdAt);
-
-      if (isToday(time)) {
-        time = time.toLocaleTimeString().slice(0, 5) + " - ";
-      } else {
-        time = time.toDateString().slice(4, 10) + " - ";
-      }
-
-      const lastMessageText = time + unescape(thread.lastMessage.text);
-
-      const redDotVisible = thread.lastMessage.sender !== loggedInUser._id && !thread.lastMessage.isRead;
-
-        if (otherUsers) {
-          thread_template = thread_template.replace(
-            "{{displayName}}",
-            otherUsers
-              .map((u) => {
-                return u.displayName
-                  ? u.displayName
-                  : u.firstName && u.lastName
-                  ? `${u.firstName} ${u.lastName}`
-                  : u.firstName
-                  ? u.firstName
-                  : u.lastName
-                  ? u.lastName
-                  : "Someone";
+function getThreadDisplayData(thread, otherUser, otherUsers) {
+  if (thread.isSupportThread && otherUsers.length) {
+    return {
+      imageUrl: "./images/people_alt.svg",
+      displayName: otherUsers
+              .map((user) => {
+                return user.displayName
+                ? user.displayName
+                : user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.firstName
+                ? user.firstName
+                : user.lastName
+                ? user.lastName
+                : "Someone";
               })
               .join(", ")
-          );
-        } else {
-          thread_template = thread_template.replace("{{displayName}}", otherUser.displayName ? otherUser.displayName : otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ? otherUser.firstName : otherUser.lastName ? otherUser.lastName : "Someone")
-        }
+    };
+  }
+  
+  return {
+    imageUrl: (otherUser && otherUser.imageUrl)
+            ? buildfire.imageLib.cropImage(otherUser.imageUrl, { size: "xs", aspect: "1:1" })
+            : "./images/avatar.png",
+    displayName: otherUser.displayName
+            ? otherUser.displayName : otherUser.firstName && otherUser.lastName ?
+            `${otherUser.firstName} ${otherUser.lastName}` : otherUser.firstName ?
+             otherUser.firstName : otherUser.lastName ?
+             otherUser.lastName : "Someone",
+    
+  };
+}
 
-        element.innerHTML = thread_template
-        .replace("{{imageUrl}}", imageUrl)
-        .replace("{{lastMessage}}", lastMessageText)
-        .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+function formatLastMessage(lastMessage) {
+  const time = new Date(lastMessage.createdAt);
+  const formattedTime = isToday(time) ? time.toLocaleTimeString().slice(0, 5) + " - " : time.toDateString().slice(4, 10) + " - ";
+  return formattedTime + unescape(lastMessage.text);
+}
 
-      element.onclick = () => {
-        if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
-        const wallTitle = thread.wallTitle || prepareCommunityWallTitleBar(thread.users);
+function shouldShowUnreadIndicator(lastMessage) {
+  return lastMessage.sender !== loggedInUser._id && lastMessage && !lastMessage.isRead;
+}
 
-        let navigationParams = {
-          pluginId: thread.navigationData.pluginId,
-          instanceId: thread.navigationData.instanceId,
-          folderName: thread.navigationData.folderName,
-          title: wallTitle,
-          queryString: "wid=" + thread.wallId + "&wTitle=" + wallTitle
-        }
+function createThreadHTML(thread, displayName, imageUrl, lastMessageText, redDotVisible, otherUsers) {
+  let template = document.getElementById("thread-ui-template").innerHTML;
+  template = template
+          .replace("{{displayName}}", displayName)
+          .replace("{{imageUrl}}", imageUrl)
+          .replace("{{lastMessage}}", lastMessageText)
+          .replace("{{visibility}}", redDotVisible ? "visible" : "hidden");
+  
+  const element = document.createElement("div");
+  element.innerHTML = template;
+  element.onclick = () => handleThreadClick(thread, redDotVisible, otherUsers);
+  
+  return element;
+}
 
-        if (otherUsers) {
-          navigationParams.queryString += `&userIds=${ otherUsers.map(u => u._id) }`;
-        }
+function handleThreadClick(thread, redDotVisible, otherUsers) {
+  
+  const wallTitle = prepareCommunityWallTitleBar(thread.users) || thread.wallTitle;
+  if (redDotVisible) Threads.setReadTrue(loggedInUser, thread, () => {});
+  
+  let navigationParams = {
+    pluginId: thread.navigationData.pluginId,
+    instanceId: thread.navigationData.instanceId,
+    folderName: thread.navigationData.folderName,
+    queryString: `wid=${thread.wallId}`,
+    title: wallTitle,
+  };
+  
+  if (otherUsers && otherUsers.length) {
+    navigationParams.queryString += `&userIds=${otherUsers.map(u => u._id).join(",")}`;
+  }
+  
+  buildfire.navigation.navigateTo(navigationParams);
+}
 
-        buildfire.navigation.navigateTo(navigationParams);
-      };
+function appendSortedThreads(elements, inboxMessages) {
+  elements.sort((a, b) => new Date(b.time) - new Date(a.time));
+  elements.forEach(({ obj }) => inboxMessages.appendChild(obj));
+}
 
-      elementsToAppend.push({time:thread.lastMessage.createdAt,obj:element});
-
-      // i'm not sure why this condition has been written!! i commented it out cuz it makes issues when we are getting null for deleted users from getUserProfile(), so the threads will be larger than the elementsToAppend.
-
-      // if(elementsToAppend.length==threads.length){
-      elementsToAppend = elementsToAppend.sort((a, b) => { return new Date(b.time) - new Date(a.time); });
-      elementsToAppend.forEach(toDiv => {
-        inboxMessages.appendChild(toDiv.obj);
-      });
-
-      if (otherUsers) {
-        element.querySelector('img.profile-image').style.backgroundColor = '#9696961A';
-      }
-      // }
+async function getUserProfiles(userIds) {
+  return new Promise((resolve, reject) => {
+    buildfire.auth.getUserProfiles({ userIds }, (err, users) => {
+      if (err) return reject(err);
+      resolve(users);
     });
   });
 }
@@ -153,14 +197,14 @@ function prepareCommunityWallTitleBar(usersDetails) {
     return name;
   }
 
-  const userNames = usersDetails.map(user => getUserName(user));
+  const userNames = usersDetails.map(user => getUserName(user.userDetails));
   return userNames.join(' | ');
 }
 
 function initWidget(user) {
   loggedInUser = user;
-  Threads.getThreads(user, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
+  Threads.getThreads(user, 0, 20, async (err, threads) => {
+    await reloadMessages(threads, true);
   });
 
   let form = document.getElementById("searchForm");
@@ -170,11 +214,14 @@ function initWidget(user) {
   let inboxMessages = document.getElementById("inboxMessages");
   inboxMessages.onscroll = () =>{
     if(getMoreThreads && !loading){
-      if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1){
+      if (inboxMessages.scrollHeight - inboxMessages.scrollTop - inboxMessages.clientHeight < 1) {
         loading = true;
-        Threads.getThreads(user, document.getElementById("inboxMessages").childNodes.length, 20, (err, threads) => {
+        toggleLoading();
+        skip +=20;
+        Threads.search(user, searchValue, skip, 20, async(err, threads) => {
           if(threads.length < 20) getMoreThreads = false;
-          reloadMessages(threads, false);
+          await reloadMessages(threads, false);
+          toggleLoading();
           loading = false;
         });
       }
@@ -184,22 +231,28 @@ function initWidget(user) {
 }
 
 function onSearch(e) {
+  skip = 0;
   e.preventDefault();
-  let keyword = document.getElementById("searchInput").value;
-  if (keyword.length === 0) return initWidget(loggedInUser);
-  Threads.search(loggedInUser, keyword, 0, 20, (err, threads) => {
-    reloadMessages(threads, true);
+  searchValue = document.getElementById("searchInput").value;
+  if (!searchValue.trim()) return initWidget(loggedInUser);
+  Threads.search(loggedInUser, searchValue, 0, 20, async (err, threads) => {
+    await reloadMessages(threads, true);
   });
+}
+
+function toggleLoading() {
+    let loading = document.getElementById("loading");
+     loading.style.display = loading.style.display === "flex" ? "none" : "flex";
 }
 
 function showEmptyState() {
   let emptyState = document.getElementById("emptyState");
-  emptyState.style.visibility = "visible";
+  emptyState.style.display = "flex";
 }
 
 function hideEmptyState() {
   let emptyState = document.getElementById("emptyState");
-  emptyState.style.visibility = "hidden";
+  emptyState.style.display = "none";
 }
 
 function isToday(someDate) {

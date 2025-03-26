@@ -4,6 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const ZipWebpackPlugin = require('zip-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 const WebpackConfig = {
 
@@ -36,7 +37,10 @@ const WebpackConfig = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env']
+            presets: [
+              ['@babel/preset-env', { targets: "defaults" }]
+            ],
+            plugins: ['@babel/plugin-transform-runtime']
           }
         }
       },
@@ -51,7 +55,6 @@ const WebpackConfig = {
   },
 
   plugins: [
-    new webpack.optimize.UglifyJsPlugin(),
     new HtmlWebpackPlugin({
       filename: 'control/content/index.html',
       inject: true,
@@ -107,6 +110,14 @@ const WebpackConfig = {
     new ZipWebpackPlugin({
       path: path.join(__dirname, '../'),
       filename: `plugin.zip`
+    }),
+    new UglifyJsPlugin({
+      sourceMap: false,
+      uglifyOptions: {
+        compress: {
+          drop_console: false,
+        },
+      },
     })
   ]
 
