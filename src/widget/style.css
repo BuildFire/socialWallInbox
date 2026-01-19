@@ -38,6 +38,11 @@
 
 body {
     margin: 0;
+    padding-bottom: var(--bf-safe-area-inset-bottom) !important;
+}
+
+html[safe-area="true"] body {
+    padding-top: calc(20px + var(--bf-safe-area-inset-top)) !important;
 }
 
 #inboxMessages {
@@ -116,6 +121,11 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
 }
+
+html[safe-area="true"] .mdc-list{
+    max-height: calc(100vh - 140px - var(--bf-safe-area-inset-bottom));
+}
+
 .red-dot {
     width: 10px;
     height: 10px;
